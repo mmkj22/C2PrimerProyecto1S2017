@@ -1,0 +1,7 @@
+graph G{ rankir=TB; node [shape = box, fontsize=11, fontname="Arial", style=filled, fillcolor=grey88];"SENTENCIAS78"[label ="SENTENCIAS"];
+"PAR80"[label ="PAR"];
+"SENTENCIAS78"--"PAR80";
+"PAR80"[label ="PAR"];
+"PORCENTAJE81"[label ="PORCENTAJE"];
+"PAR80"--"PORCENTAJE81";
+}}}

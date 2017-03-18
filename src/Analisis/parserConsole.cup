@@ -1,0 +1,692 @@
+package Analisis;
+
+import java_cup.runtime.*;
+import java.io.*;
+import Haskell.*;
+import Errores.*;
+
+parser code
+{:
+
+    private Errores err = Errores.getInstance();
+
+    public void syntax_error(Symbol token) {
+        err.nuevoErrorSintactico((token.left+1),(token.right+1), "Se esperaba "+token.value);
+        System.out.println("Error sintactico: linea "+ (token.left+1)+" columna: "+(token.right+1)+" Lexema: "+token.value);
+
+    }
+
+    public void unrecovered_syntax_error(Symbol s) throws java.lang.Exception{
+        err.nuevoErrorSintactico((s.left+1),(s.right+1), "Se esperaba "+s.value);
+        System.out.println("Error sintactico: linea "+ s.left+" columna: "+s.right+" Lexema: "+s.value);
+
+    }  
+
+    public NodoHK nodo;
+:}
+
+action code
+{:
+    
+:}
+
+terminal String numero, texto, identificador, decimal;
+terminal String tkn_let, tkn_calcular, tkn_succ, tkn_decc, tkn_min, tkn_max, tkn_sum, tkn_product;
+terminal String tkn_revers, tkn_impr, tkn_par, tkn_asc, tkn_desc, tkn_length;
+terminal String par_izq, par_der, llave_izq, llave_der, cor_izq, cor_der, mas, menos, div, potencia, por, mod;
+terminal String sqrt, coma, dolar, aumento, dadmiracion, igual, caracter, porcentaje;
+
+non terminal NodoHK INICIO, LST_SENTENCIAS, SENTENCIAS;
+non terminal NodoHK LLAMADA_MET, CALCULAR, LISTA, SUCC, DECC, MIN;
+non terminal NodoHK MAX, SUM, PRODUCT, REVERS, IMPR, PAR, ASC, DESC, LENGTH;
+non terminal NodoHK LST_PAR, LPAR;
+non terminal NodoHK LST_DIM, DIM, MET_NATIVOS, LST_DIMS, DIMS, ASIGNA_LISTA, OPC_LISTA;
+non terminal NodoHK CONCAT, LST_CON, CON;
+non terminal NodoHK ARITMETICAS, OPERACIONES;
+non terminal NodoHK OTRA_DIM, ODIM, BUSCA_LIST, LLAMADAS;
+
+precedence left mas, menos;
+precedence left por, div, mod;
+precedence right potencia, sqrt;
+
+start with INICIO;
+
+INICIO ::= LST_SENTENCIAS:nodo
+                {:
+                    parser.nodo=nodo;
+                :};
+
+LST_SENTENCIAS ::= LST_SENTENCIAS:nodo SENTENCIAS:se
+                    {:
+                        nodo.hijos.add(se);
+                        RESULT = nodo;
+                    :}
+                  |SENTENCIAS:se
+                    {:
+                        NodoHK nodo = new NodoHK("SENTENCIAS");
+                        nodo.hijos.add(se);
+                        RESULT = nodo;
+                    :};
+
+SENTENCIAS ::= LLAMADA_MET:nodo {: RESULT = nodo; :}
+              |LISTA:nodo {: RESULT = nodo; :}
+              |MET_NATIVOS:nodo {: RESULT = nodo; :}
+              |CALCULAR:nodo {: RESULT = nodo; :}
+              |BUSCA_LIST:nodo {: RESULT = nodo; :};
+
+
+LLAMADA_MET ::= dolar identificador:id llave_izq LST_PAR:param llave_der dolar
+                {:
+                    NodoHK nodo = new NodoHK("LLAMADA_MET");
+                    nodo.hijos.add(new NodoHK(id, idleft, idright));
+                    nodo.hijos.add(param);
+                    RESULT = nodo;
+                :}
+              | dolar identificador:id llave_izq llave_der dolar
+                {:
+                    NodoHK nodo = new NodoHK("LLAMADA_MET");
+                    nodo.hijos.add(new NodoHK(id, idleft, idright));
+                    RESULT = nodo;
+                :};
+
+LST_PAR ::= LST_PAR:nodo coma LPAR:pa
+                {:
+                    nodo.hijos.add(pa);
+                    RESULT = nodo;
+                :}
+           |LPAR:pa
+                {:
+                    NodoHK nodo = new NodoHK("PARAMETROS");
+                    nodo.hijos.add(pa);
+                    RESULT = nodo;
+                :};
+
+LPAR ::= ARITMETICAS:nodo {: RESULT = nodo; :}
+       | porcentaje
+            {:
+                NodoHK nodo = new NodoHK("PORCENTAJE");
+                RESULT = nodo;
+            :}
+       |cor_izq LST_DIMS:di cor_der
+            {:
+                NodoHK nodo = new NodoHK("lista");
+                nodo.hijos.add(di);
+                RESULT = nodo;
+            :}
+       |MET_NATIVOS:na
+            {:
+                RESULT = na;
+            :};
+
+MET_NATIVOS ::= SUCC:nodo {: RESULT = nodo; :}
+               |DECC:nodo {: RESULT = nodo; :}
+               |MIN:nodo {: RESULT = nodo; :}
+               |MAX:nodo {: RESULT = nodo; :}
+               |SUM:nodo {: RESULT = nodo; :}
+               |PRODUCT:nodo {: RESULT = nodo; :}
+               |REVERS:nodo {: RESULT = nodo; :}
+               |IMPR:nodo {: RESULT = nodo; :}
+               |PAR:nodo {: RESULT = nodo; :}
+               |DESC:nodo {: RESULT = nodo; :}
+               |ASC:nodo {: RESULT = nodo; :}
+               |LENGTH:nodo {: RESULT = nodo; :}
+               |CONCAT:nodo {: RESULT = nodo; :};
+
+
+LISTA ::= tkn_let identificador:id igual ASIGNA_LISTA:asg
+                    {:
+                        NodoHK nodo = new NodoHK("DECLARA_ASIGNA_LISTA");
+                        nodo.hijos.add(new NodoHK(id, idleft, idright));
+                        nodo.hijos.add(asg);
+                        RESULT = nodo;
+                    :}
+        | tkn_let identificador:id igual LLAMADAS:lla
+                    {:
+                        NodoHK nodo = new NodoHK("DECLARA_ASIGNA_LISTA");
+                        nodo.hijos.add(new NodoHK(id, idleft, idright));
+                        nodo.hijos.add(lla);
+                        RESULT = nodo;
+                    :}
+
+        | tkn_let identificador:id igual BUSCA_LIST:lla
+                    {:
+                        NodoHK nodo = new NodoHK("DECLARA_ASIGNA_LISTA");
+                        nodo.hijos.add(new NodoHK(id, idleft, idright));
+                        nodo.hijos.add(lla);
+                        RESULT = nodo;
+                    :};
+
+ASIGNA_LISTA ::= cor_izq LST_DIMS:di cor_der
+                    {:
+                        NodoHK nodo = new NodoHK("lista");
+                        nodo.hijos.add(di);
+                        RESULT = nodo;
+                    :}
+                |texto:cad
+                    {:
+                        NodoHK nodo = new NodoHK("cadena");
+                        nodo.hijos.add(new NodoHK(cad, cadleft, cadright));
+                        RESULT = nodo;
+                    :}
+                |identificador:id
+                    {:
+                        NodoHK nodo = new NodoHK("identificador");
+                        nodo.hijos.add(new NodoHK(id, idleft, idright));
+                        RESULT = nodo;
+                    :}
+                |porcentaje
+                    {:
+                        NodoHK nodo = new NodoHK("PORCENTAJE");
+                        RESULT = nodo;
+                    :};
+
+LLAMADAS ::= LLAMADA_MET:nodo
+                {:
+                    RESULT = nodo;
+                :}
+            |MET_NATIVOS:nodo
+                {:
+                    RESULT = nodo;
+                :};
+
+LST_DIMS ::= LST_DIMS:nodo coma DIMS:di
+                {:
+                    nodo.hijos.add(di);
+                    RESULT = nodo;
+                :}
+            |DIMS:di
+                {:
+                    NodoHK nodo = new NodoHK("DIMENSIONES");
+                    nodo.hijos.add(di);
+                    RESULT = nodo;
+                :};
+
+DIMS ::= ARITMETICAS:nodo
+                {:
+                    RESULT = nodo;
+                :}
+        |caracter:car
+                {:
+                    NodoHK nodo = new NodoHK("caracter");
+                    nodo.hijos.add(new NodoHK(car, carleft, carright));
+                    RESULT = nodo;
+                :}
+        |porcentaje
+                {:
+                    NodoHK nodo = new NodoHK("PORCENTAJE");
+                    RESULT = nodo;
+                :}
+        |cor_izq OTRA_DIM:di cor_der
+                {:
+                    RESULT = di;
+                :};
+
+OTRA_DIM ::= OTRA_DIM:nodo coma ODIM:di
+                {:
+                    nodo.hijos.add(di);
+                    RESULT = nodo;
+                :}
+            |ODIM:di
+                {:
+                    NodoHK nodo = new NodoHK("DIMENSIONES");
+                    nodo.hijos.add(di);
+                    RESULT = nodo;
+                :};
+
+ODIM ::= ARITMETICAS:nodo
+                {:
+                    RESULT = nodo;
+                :}
+        |caracter:car 
+                {:
+                    NodoHK nodo = new NodoHK("caracter");
+                    nodo.hijos.add(new NodoHK(car, carleft, carright));
+                    RESULT = nodo;
+                :}
+        |porcentaje
+                {:
+                    NodoHK nodo = new NodoHK("PORCENTAJE");
+                    RESULT = nodo;
+                :}
+        |MET_NATIVOS:n
+                {:
+                    RESULT = n;
+                :};
+
+SUCC ::= dolar tkn_succ ARITMETICAS:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("SUCC");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :}
+        |dolar tkn_succ porcentaje dolar
+                {:
+                    NodoHK nodo = new NodoHK("SUCC");
+                    nodo.hijos.add(new NodoHK("PORCENTAJE"));
+                    RESULT = nodo;
+                :}
+        |dolar tkn_succ MET_NATIVOS:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("SUCC");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :};
+
+DECC ::= dolar tkn_decc ARITMETICAS:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("DECC");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :}
+        |dolar tkn_decc porcentaje dolar
+                {:
+                    NodoHK nodo = new NodoHK("DECC");
+                    nodo.hijos.add(new NodoHK("PORCENTAJE"));
+                    RESULT = nodo;
+                :}
+        |dolar tkn_decc MET_NATIVOS:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("DECC");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :};
+
+OPC_LISTA ::= ASIGNA_LISTA:asg
+                {:
+                    RESULT = asg;
+                :};
+
+
+MIN ::= dolar tkn_min OPC_LISTA:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("MIN");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :}
+        |dolar tkn_min MET_NATIVOS:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("MIN");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :};
+
+MAX ::= dolar tkn_max OPC_LISTA:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("MAX");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :}
+        |dolar tkn_max MET_NATIVOS:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("MAX");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :}
+        |dolar tkn_max BUSCA_LIST:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("MAX");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :};
+
+SUM ::= dolar tkn_sum OPC_LISTA:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("SUM");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :}
+       |dolar tkn_sum MET_NATIVOS:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("SUM");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :}
+       |dolar tkn_sum BUSCA_LIST:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("SUM");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :};
+
+PRODUCT ::= dolar tkn_product OPC_LISTA:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("PRODUCT");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :}
+           |dolar tkn_product MET_NATIVOS:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("PRODUCT");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :}
+           |dolar tkn_product BUSCA_LIST:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("PRODUCT");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :};
+
+REVERS ::= dolar tkn_revers OPC_LISTA:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("REVERS");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :}
+         | dolar tkn_revers MET_NATIVOS:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("REVERS");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :}
+         | dolar tkn_revers BUSCA_LIST:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("REVERS");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :};
+
+IMPR ::= dolar tkn_impr OPC_LISTA:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("IMPR");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :}
+        | dolar tkn_impr MET_NATIVOS:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("IMPR");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :}
+        | dolar tkn_impr BUSCA_LIST:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("IMPR");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :};
+
+PAR ::= dolar tkn_par OPC_LISTA:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("PAR");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :}
+       |dolar tkn_par MET_NATIVOS:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("PAR");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :}
+        |dolar tkn_par BUSCA_LIST:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("PAR");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :};
+
+ASC ::= dolar tkn_asc OPC_LISTA:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("ASC");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :}
+       |dolar tkn_asc MET_NATIVOS:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("ASC");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :}
+       |dolar tkn_asc BUSCA_LIST:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("ASC");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :};
+
+DESC ::= dolar tkn_desc OPC_LISTA:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("DESC");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :}
+        |dolar tkn_desc MET_NATIVOS:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("DESC");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :}
+        |dolar tkn_desc BUSCA_LIST:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("DESC");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :};
+
+LENGTH ::= dolar tkn_length OPC_LISTA:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("LENGTH");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :}
+         | dolar tkn_length MET_NATIVOS:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("LENGTH");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :}
+        | dolar tkn_length BUSCA_LIST:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("LENGTH");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :};
+
+CONCAT ::= ASIGNA_LISTA:as1 LST_CON:as2
+                {:
+                    NodoHK nodo = new NodoHK("CONCAT");
+                    nodo.hijos.add(as1);
+                    nodo.hijos.add(as2);
+                    RESULT = nodo;
+                :};
+
+LST_CON ::= LST_CON:nodo CON:co
+                {:
+                    nodo.hijos.add(co);
+                    RESULT = nodo;
+                :}
+          | CON:co
+                {:
+                    NodoHK nodo = new NodoHK("LST_CONCAT");
+                    nodo.hijos.add(co);
+                    RESULT = nodo;
+                :};
+
+CON ::= aumento ASIGNA_LISTA:as
+            {:
+                RESULT = as;
+            :};
+
+BUSCA_LIST ::= identificador:id LST_DIM:dime
+                {:
+                    NodoHK nodo = new NodoHK("INDICE");
+                    NodoHK iden = new NodoHK("identificador");
+                    iden.hijos.add(new NodoHK(id, idleft, idright));
+                    nodo.hijos.add(iden);
+                    nodo.hijos.add(dime);
+                    RESULT = nodo;
+                :}
+             | porcentaje LST_DIM:dime
+                {:
+                    NodoHK nodo = new NodoHK("INDICE");
+                    nodo.hijos.add(new NodoHK("PORCENTAJE"));
+                    nodo.hijos.add(dime);
+                    RESULT = nodo;
+                :};
+
+LST_DIM ::= LST_DIM:nodo DIM:di
+                {:
+                    nodo.hijos.add(di);
+                    RESULT = nodo;
+                :}
+           |DIM:di
+                {:
+                    NodoHK nodo = new NodoHK("DIMENSIONES");
+                    nodo.hijos.add(di);
+                    RESULT = nodo;
+                :};
+
+DIM ::= dadmiracion CALCULAR:nodo
+            {:
+                RESULT = nodo;
+            :}
+       |dadmiracion LLAMADAS:nodo
+            {:
+                RESULT = nodo;
+            :}
+       |dadmiracion identificador:id
+            {:
+                NodoHK nodo = new NodoHK("identificador");
+                nodo.hijos.add(new NodoHK(id, idleft, idright));
+                RESULT = nodo;
+            :}
+       |dadmiracion porcentaje
+            {:
+                NodoHK nodo = new NodoHK("PORCENTAJE");
+                RESULT = nodo;
+            :};
+
+
+ARITMETICAS ::= CALCULAR:nodo
+                    {:
+                        RESULT = nodo;
+                    :}
+              | identificador:id
+                    {:
+                        NodoHK nodo = new NodoHK("identificador");
+                        nodo.hijos.add(new NodoHK(id, idleft, idright));
+                        RESULT = nodo;
+                    :}
+              | BUSCA_LIST:nodo
+                    {:
+                        RESULT = nodo;
+                    :}
+              | texto:tex
+                    {:
+                        NodoHK nodo = new NodoHK("cadena");
+                        nodo.hijos.add(new NodoHK(tex));
+                        RESULT = nodo;
+                    :}
+              
+              | par_izq ARITMETICAS:log par_der
+                    {:
+                        RESULT = log;
+                    :}
+              
+              | LLAMADA_MET:nodo
+                    {:
+                        RESULT = nodo;
+                    :};
+
+
+CALCULAR ::= dolar tkn_calcular OPERACIONES:op dolar
+                    {:
+                        NodoHK nodo = new NodoHK("CALCULAR");
+                        nodo.hijos.add(op);
+                        RESULT = nodo;
+                    :};
+
+OPERACIONES ::= OPERACIONES:op1 mas OPERACIONES:op2
+                    {:
+                        NodoHK nodo = new NodoHK("mas");
+                        nodo.hijos.add(op1);
+                        nodo.hijos.add(op2);
+                        RESULT = nodo;
+                    :}
+               |OPERACIONES:op1 menos OPERACIONES:op2
+                    {:
+                        NodoHK nodo = new NodoHK("menos");
+                        nodo.hijos.add(op1);
+                        nodo.hijos.add(op2);
+                        RESULT = nodo;
+                    :}
+               |OPERACIONES:op1 por OPERACIONES:op2
+                    {:
+                        NodoHK nodo = new NodoHK("por");
+                        nodo.hijos.add(op1);
+                        nodo.hijos.add(op2);
+                        RESULT = nodo;
+                    :}
+               |OPERACIONES:op1 div OPERACIONES:op2
+                    {:
+                        NodoHK nodo = new NodoHK("div");
+                        nodo.hijos.add(op1);
+                        nodo.hijos.add(op2);
+                        RESULT = nodo;
+                    :}
+               |OPERACIONES:op1 mod OPERACIONES:op2
+                    {:
+                        NodoHK nodo = new NodoHK("mod");
+                        nodo.hijos.add(op1);
+                        nodo.hijos.add(op2);
+                        RESULT = nodo;
+                    :}
+               |OPERACIONES:op1 potencia OPERACIONES:op2
+                    {:
+                        NodoHK nodo = new NodoHK("potencia");
+                        nodo.hijos.add(op1);
+                        nodo.hijos.add(op2);
+                        RESULT = nodo;
+                    :}
+               |OPERACIONES:op1 sqrt OPERACIONES:op2
+                    {:
+                        NodoHK nodo = new NodoHK("sqrt");
+                        nodo.hijos.add(op1);
+                        nodo.hijos.add(op2);
+                        RESULT = nodo;
+                    :}
+               |menos OPERACIONES:op
+                    {:
+                        NodoHK nodo = new NodoHK("menos");
+                        nodo.hijos.add(op);
+                        RESULT = nodo;
+                    :}
+               |numero:num
+                    {:
+                        NodoHK nodo = new NodoHK("entero");
+                        nodo.hijos.add(new NodoHK(num, numleft, numright));
+                        RESULT = nodo;
+                    :}
+               |decimal:dec
+                    {:
+                        NodoHK nodo = new NodoHK("decimal");
+                        nodo.hijos.add(new NodoHK(dec, decleft, decright));
+                        RESULT = nodo;
+                    :}
+               |identificador:id
+                    {:
+                        NodoHK nodo = new NodoHK("identificador");
+                        nodo.hijos.add(new NodoHK(id, idleft, idright));
+                        RESULT = nodo;
+                    :}
+               |porcentaje
+                    {:
+                        NodoHK nodo = new NodoHK("PORCENTAJE");
+                        RESULT = nodo;
+                    :}
+               |par_izq OPERACIONES:nodo par_der
+                    {:
+                        RESULT = nodo;
+                    :}
+               |LLAMADA_MET:nodo
+                    {:
+                        RESULT = nodo;
+                    :}
+               |MET_NATIVOS:nodo
+                    {:
+                        RESULT = nodo;
+                    :}
+               |BUSCA_LIST:nodo
+                    {:
+                        RESULT = nodo;
+                    :}
+               |CALCULAR:nodo {: RESULT = nodo; :};
