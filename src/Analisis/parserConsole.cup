@@ -308,6 +308,12 @@ MIN ::= dolar tkn_min OPC_LISTA:opc dolar
                     NodoHK nodo = new NodoHK("MIN");
                     nodo.hijos.add(opc);
                     RESULT = nodo;
+                :}
+        |dolar tkn_min BUSCA_LIST:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("MIN");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
                 :};
 
 MAX ::= dolar tkn_max OPC_LISTA:opc dolar

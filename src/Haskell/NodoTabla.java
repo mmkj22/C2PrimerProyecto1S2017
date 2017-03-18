@@ -9,7 +9,7 @@ package Haskell;
  *
  * @author Kristhal
  */
-public class NodoTabla {
+public class NodoTabla implements Cloneable{
     String nombre;
     String tipo;
     String rol;
@@ -22,6 +22,8 @@ public class NodoTabla {
     int retorna;
     NodoHK valRetorno;
     int bandera;
+    
+    
     
     public NodoTabla( String nombre, String tipo, String rol, String ambito, 
                       String dimension, String parametros, int globaLocal, 
@@ -40,6 +42,12 @@ public class NodoTabla {
         this.exp = exp;
         this.valRetorno = valRetorno;  
         this.bandera=bandera;
+    }
+    
+    @Override
+    public NodoTabla clone() throws CloneNotSupportedException
+    {
+        return (NodoTabla)super.clone();
     }
 
     public int getBandera() {

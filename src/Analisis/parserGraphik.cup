@@ -701,7 +701,8 @@ PROCESAR ::= tkn_procesar igual MET_ESPECIALES:met int_der
                 :};
 
 MET_ESPECIALES::= HASKELL:nodo {: RESULT = nodo; :}
-                | NORMAL:nodo {: RESULT = nodo; :};
+                | NORMAL:nodo {: RESULT = nodo; :}
+                | EXP:nodo {: RESULT = nodo; :};
 
 HASKELL ::= tkn_llamarHK identificador:id par_izq LST_COLUMNA:cols par_der
             {:
@@ -709,7 +710,6 @@ HASKELL ::= tkn_llamarHK identificador:id par_izq LST_COLUMNA:cols par_der
                 nodo.hijos.add(new NodoGK(id, idleft, idright));
                 nodo.hijos.add(cols);
                 RESULT = nodo;
-                
             :};
 
 NORMAL ::= tkn_llamar identificador:id par_izq LST_COLUMNA:cols par_der

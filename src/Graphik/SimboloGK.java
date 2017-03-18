@@ -5,6 +5,7 @@
  */
 package Graphik;
 
+import Haskell.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,7 +13,7 @@ import java.util.List;
  *
  * @author Kristhal
  */
-public class SimboloGK implements Cloneable{
+public class SimboloGK extends Value implements Cloneable {
     private String id;
     private String tipo_variable;
     private Object valor;
@@ -100,11 +101,11 @@ public class SimboloGK implements Cloneable{
         this.numero_parametros = numero_parametros;
     }
 
-    public int getTipo() {
+    public int getTipoGK() {
         return tipo;
     }
 
-    public void setTipo(int tipo) {
+    public void setTipoGK(int tipo) {
         this.tipo = tipo;
     }
 
@@ -116,11 +117,11 @@ public class SimboloGK implements Cloneable{
         this.orden = orden;
     }
 
-    public List<SimboloGK> getElementosArreglo() {
+    public List<SimboloGK> getElementosArregloGK() {
         return elementosArreglo;
     }
 
-    public void setElementosArreglo(List<SimboloGK> elementosArreglo) {
+    public void setElementosArregloGK(List<SimboloGK> elementosArreglo) {
         this.elementosArreglo = elementosArreglo;
     }
 
@@ -163,6 +164,4 @@ public class SimboloGK implements Cloneable{
     public void setVisibilidad(int visibilidad) {
         this.visibilidad = visibilidad;
     }
-    
-    
 }

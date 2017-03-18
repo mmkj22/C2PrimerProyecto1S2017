@@ -255,6 +255,14 @@ LISTA ::= tkn_let identificador:id igual ASIGNA_LISTA:asg
                         nodo.hijos.add(new NodoHK(id, idleft, idright));
                         nodo.hijos.add(asg);
                         RESULT = nodo;
+                    :}
+	     
+          |tkn_let identificador:id igual BUSCA_LIST:asg	
+                    {:
+			NodoHK nodo = new NodoHK("DECLARA_ASIGNA_LISTA");
+                        nodo.hijos.add(new NodoHK(id, idleft, idright));
+                        nodo.hijos.add(asg);
+                        RESULT = nodo;
                     :};
 
 ASIGNA_LISTA ::= cor_izq LST_DIMS:di cor_der
@@ -381,6 +389,12 @@ MIN ::= dolar tkn_min OPC_LISTA:opc dolar
                     NodoHK nodo = new NodoHK("MIN");
                     nodo.hijos.add(opc);
                     RESULT = nodo;
+                :}
+       |dolar tkn_min BUSCA_LIST:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("MIN");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
                 :};
 
 MAX ::= dolar tkn_max OPC_LISTA:opc dolar
@@ -390,6 +404,12 @@ MAX ::= dolar tkn_max OPC_LISTA:opc dolar
                     RESULT = nodo;
                 :}
        |dolar tkn_max MET_NATIVOS:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("MAX");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :}
+      |dolar tkn_max BUSCA_LIST:opc dolar
                 {:
                     NodoHK nodo = new NodoHK("MAX");
                     nodo.hijos.add(opc);
@@ -407,6 +427,12 @@ SUM ::= dolar tkn_sum OPC_LISTA:opc dolar
                     NodoHK nodo = new NodoHK("SUM");
                     nodo.hijos.add(opc);
                     RESULT = nodo;
+                :}
+       |dolar tkn_sum BUSCA_LIST:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("SUM");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
                 :};
 
 PRODUCT ::= dolar tkn_product OPC_LISTA:opc dolar
@@ -420,6 +446,12 @@ PRODUCT ::= dolar tkn_product OPC_LISTA:opc dolar
                     NodoHK nodo = new NodoHK("PRODUCT");
                     nodo.hijos.add(opc);
                     RESULT = nodo;
+                :}
+           |dolar tkn_product BUSCA_LIST:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("PRODUCT");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
                 :};
 
 REVERS ::= dolar tkn_revers OPC_LISTA:opc dolar
@@ -429,6 +461,12 @@ REVERS ::= dolar tkn_revers OPC_LISTA:opc dolar
                     RESULT = nodo;
                 :}
           |dolar tkn_revers MET_NATIVOS:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("REVERS");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :}
+          |dolar tkn_revers BUSCA_LIST:opc dolar
                 {:
                     NodoHK nodo = new NodoHK("REVERS");
                     nodo.hijos.add(opc);
@@ -447,6 +485,12 @@ IMPR ::= dolar tkn_impr OPC_LISTA:opc dolar
                     NodoHK nodo = new NodoHK("IMPR");
                     nodo.hijos.add(opc);
                     RESULT = nodo;
+                :}
+        |dolar tkn_impr BUSCA_LIST:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("IMPR");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
                 :};
 
 PAR ::= dolar tkn_par OPC_LISTA:opc dolar
@@ -456,6 +500,13 @@ PAR ::= dolar tkn_par OPC_LISTA:opc dolar
                     RESULT = nodo;
                 :}
        |dolar tkn_par MET_NATIVOS:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("PAR");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :}
+
+        |dolar tkn_par BUSCA_LIST:opc dolar
                 {:
                     NodoHK nodo = new NodoHK("PAR");
                     nodo.hijos.add(opc);
@@ -473,6 +524,12 @@ ASC ::= dolar tkn_asc OPC_LISTA:opc dolar
                     NodoHK nodo = new NodoHK("ASC");
                     nodo.hijos.add(opc);
                     RESULT = nodo;
+                :}
+        |dolar tkn_asc BUSCA_LIST:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("ASC");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
                 :};
 
 DESC ::= dolar tkn_desc OPC_LISTA:opc dolar
@@ -486,6 +543,12 @@ DESC ::= dolar tkn_desc OPC_LISTA:opc dolar
                     NodoHK nodo = new NodoHK("DESC");
                     nodo.hijos.add(opc);
                     RESULT = nodo;
+                :}
+        |dolar tkn_desc BUSCA_LIST:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("DESC");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
                 :};
 
 LENGTH ::= dolar tkn_length OPC_LISTA:opc dolar
@@ -495,6 +558,12 @@ LENGTH ::= dolar tkn_length OPC_LISTA:opc dolar
                     RESULT = nodo;
                 :}
           |dolar tkn_length MET_NATIVOS:opc dolar
+                {:
+                    NodoHK nodo = new NodoHK("LENGTH");
+                    nodo.hijos.add(opc);
+                    RESULT = nodo;
+                :}
+          |dolar tkn_length BUSCA_LIST:opc dolar
                 {:
                     NodoHK nodo = new NodoHK("LENGTH");
                     nodo.hijos.add(opc);

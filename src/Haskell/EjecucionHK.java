@@ -9,8 +9,12 @@ import java.util.Hashtable;
 import java.util.Stack;
 import java.math.*;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
 
@@ -39,7 +43,7 @@ public class EjecucionHK {
         this.txtConsola=txtConsola;
         this.tabla=TablaSimbolos.getInstance();
         this.hash=tabla.getHash();
-        this.actual.push(this.hash);
+        this.actual.push(this.hash.clone());
     }
     
     public void Ejecutar()
@@ -559,10 +563,10 @@ public class EjecucionHK {
                 return null;
             }
             this.recorrido((String)this.ambito.peek(), nodeTable.getExp());
+            content=this.getUltimo().getVal();
             this.ambito.pop();
             this.actual.pop();
             ambito=(String)this.ambito.peek();
-            content=this.getUltimo().getVal();
             return content;
         }
         else if(nodo.valor.equals("lista"))
@@ -982,7 +986,8 @@ public class EjecucionHK {
         {
             content=registro;
             this.ambito.push(content.getNombre());
-            this.actual.push(actual.peek());
+            Hashtable<String, NodoTabla> tope = (Hashtable)actual.peek();
+            this.actual.push(this.clonarHash(tope));
             return content;
         }
         return null;
@@ -1039,17 +1044,36 @@ public class EjecucionHK {
     
     public NodoTabla getUltimo()
     {
-        NodoTabla registro;
-        registro=(NodoTabla)this.hash.get("%");
-        if(registro!=null)
-        {
-            if(registro.getVal()==null)
+        if(ambito.peek().equals("")){
+            NodoTabla registro;
+            registro=(NodoTabla)this.hash.get("%");
+            if(registro!=null)
             {
-                JOptionPane.showMessageDialog(null,"No se tiene ningun ultimo valor almacenado","Porcentaje",JOptionPane.ERROR);
+                if(registro.getVal()==null)
+                {
+                    JOptionPane.showMessageDialog(null,"No se tiene ningun ultimo valor almacenado","Porcentaje",JOptionPane.ERROR);
+                }
+                else
+                {
+                    return registro;
+                }
             }
-            else
+        }
+        else
+        {
+            NodoTabla registro;
+            Hashtable table= (Hashtable)this.actual.peek();
+            registro=(NodoTabla)table.get("%");
+            if(registro!=null)
             {
-                return registro;
+                if(registro.getVal()==null)
+                {
+                    JOptionPane.showMessageDialog(null,"No se tiene ningun ultimo valor almacenado","Porcentaje",JOptionPane.ERROR);
+                }
+                else
+                {
+                    return registro;
+                }
             }
         }
         return null;
@@ -1089,19 +1113,6 @@ public class EjecucionHK {
                     aux1=this.getUltimo();
                     aux1.setVal(aux3);
                 }
-//                else if(x.hijos.get(1).valor.equals("LLAMADA_MET"))
-//                {
-//                    aux1=this.decArreglo(ambito, x);
-//                    aux4=this.getUltimo();
-//                    aux4.setVal(aux1.getVal());
-//                }
-//                else if(x.hijos.get(1).valor.equals("REVERS") || x.hijos.get(1).valor.equals("PAR") || x.hijos.get(1).valor.equals("IMPR") || x.hijos.get(1).valor.equals("ASC") || x.hijos.get(1).valor.equals("DESC")
-//                        || x.hijos.get(1).valor.equals("CONCAT"))
-//                {
-//                    aux1=this.decArreglo(ambito, x);
-//                    aux4=this.getUltimo();
-//                    aux4.setVal(aux1.getVal());
-//                }
                 else
                 {
                     aux1=this.decArreglo(ambito, x);
@@ -1128,8 +1139,11 @@ public class EjecucionHK {
                     return;
                 }
                 this.recorrido((String)this.ambito.peek(), aux1.getExp());
+                NodoTabla temp = this.getUltimo();
                 this.ambito.pop();
                 this.actual.pop();
+                NodoTabla ultimo = this.getUltimo();
+                ultimo.setVal(temp.getVal());
                 ambito=(String)this.ambito.peek();
             }
             else if(x.valor.equals("CALCULAR"))
@@ -1796,5 +1810,36 @@ public class EjecucionHK {
             }
         }
         return content;
+    }
+    
+    Hashtable clonarHash(Hashtable<String, NodoTabla> actual) 
+    {
+        Hashtable<String, NodoTabla> nueva = new Hashtable();
+        Enumeration<String> keys = actual.keys();
+        while(keys.hasMoreElements())
+        {
+            String val = keys.nextElement();
+            NodoTabla value = (NodoTabla)actual.get(val);
+            try {
+                value = value.clone();
+            } catch (CloneNotSupportedException ex) {
+                Logger.getLogger(EjecucionHK.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            Value otroval = value.getVal();
+            try {
+                if(otroval==null)
+                {
+                    value.setVal(null);
+                }
+                else
+                {
+                    value.setVal(otroval.clone());
+                }
+            } catch (CloneNotSupportedException ex) {
+                Logger.getLogger(EjecucionHK.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            nueva.put(val, value);
+        }
+        return nueva;
     }
 }

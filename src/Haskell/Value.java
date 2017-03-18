@@ -12,7 +12,7 @@ import java.util.List;
  *
  * @author Kristhal
  */
-public class Value {
+public class Value implements Cloneable{
     public List<Value> elementosArreglo= new ArrayList();
     String tipo;
     Object val;
@@ -24,7 +24,12 @@ public class Value {
     
     public Value()
     {
-        
+    }
+    
+    @Override
+    public Value clone() throws CloneNotSupportedException
+    {
+        return (Value)super.clone();
     }
     
     public Value(String tipo, Object val)
@@ -607,7 +612,14 @@ public class Value {
             }
             max.setTipo("numero");
             max.setVal(num);
-            max.setImprimirPantalla(String.valueOf(num));
+            if(this.tipo.equals("numero"))
+            {
+                max.setImprimirPantalla(String.valueOf(num));
+            }
+            else
+            {
+                max.setImprimirPantalla(String.valueOf((char)num));
+            }
             return max;
         }
         else{
@@ -637,7 +649,7 @@ public class Value {
                 }
                 max.setTipo("numero");
                 max.setVal(num);
-                max.setImprimirPantalla(String.valueOf(num));
+                max.setImprimirPantalla(String.valueOf((char)num));
                 return max;
             }
         }
@@ -665,7 +677,14 @@ public class Value {
             }
             min.setTipo("numero");
             min.setVal(num);
-            min.setImprimirPantalla(String.valueOf(num));
+            if(this.tipo.equals("numero"))
+            {
+                min.setImprimirPantalla(String.valueOf(num));
+            }
+            else
+            {
+                min.setImprimirPantalla(String.valueOf((char)num));
+            }
             return min;
         }
         else
@@ -697,7 +716,7 @@ public class Value {
                 }
                 min.setTipo("numero");
                 min.setVal(num);
-                min.setImprimirPantalla(String.valueOf(num));
+                min.setImprimirPantalla(String.valueOf((char)num));
                 return min;
             }
         }
