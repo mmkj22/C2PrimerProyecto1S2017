@@ -22,6 +22,10 @@ public class MetodoGK {
     private String id;
     private String visibilidad;
     private String rol;
+    private String ambito;
+    private String tipo;
+    private int linea;
+    private int columna;
 
     public MetodoGK()
     {
@@ -32,6 +36,9 @@ public class MetodoGK {
         id="";
         rol="";
         visibilidad="";
+        tipo="";
+        linea=0;
+        columna=0;
     }
     
     public MetodoGK(NodoGK sentencias, String id, String visibilidad)
@@ -82,6 +89,40 @@ public class MetodoGK {
     public void setRol(String rol) {
         this.rol = rol;
     }
+
+    public String getAmbito() {
+        return ambito;
+    }
+
+    public void setAmbito(String ambito) {
+        this.ambito = ambito;
+    }
+
+    public String getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(String tipo) {
+        this.tipo = tipo;
+    }
+
+    public int getLinea() {
+        return linea;
+    }
+
+    public void setLinea(int linea) {
+        this.linea = linea;
+    }
+
+    public int getColumna() {
+        return columna;
+    }
+
+    public void setColumna(int columna) {
+        this.columna = columna;
+    }
+    
+    
     
     public void imprimirParametros()
     {

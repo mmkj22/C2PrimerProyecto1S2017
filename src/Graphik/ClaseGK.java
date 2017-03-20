@@ -22,6 +22,7 @@ public class ClaseGK {
     public Map<String, SimboloGK> varGlobales;
     private List<ClaseGK> hereda;
     private List<String> llamadasHK;
+    private NodoGK nodo;
 
     public ClaseGK()
     {
@@ -77,5 +78,30 @@ public class ClaseGK {
     public void setLlamadasHK(List<String> llamadasHK) {
         this.llamadasHK = llamadasHK;
     }
+
+    public Map<String, MetodoGK> getMetodos() {
+        return metodos;
+    }
+
+    public void setMetodos(Map<String, MetodoGK> metodos) {
+        this.metodos = metodos;
+    }
+
+    public Map<String, SimboloGK> getVarGlobales() {
+        return varGlobales;
+    }
+
+    public void setVarGlobales(Map<String, SimboloGK> varGlobales) {
+        this.varGlobales = varGlobales;
+    }
+
+    public NodoGK getNodo() {
+        return nodo;
+    }
+
+    public void setNodo(NodoGK nodo) {
+        this.nodo = nodo;
+    }
+    
     
 }

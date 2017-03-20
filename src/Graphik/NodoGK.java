@@ -26,6 +26,8 @@ public class NodoGK {
     
     public NodoGK(String valor, int linea, int columna) {
         this.valor = valor;
+        this.linea=linea;
+        this.columna=columna;
         hijos = new ArrayList<NodoGK>();
     }
     

@@ -13,27 +13,32 @@ import java.util.List;
  *
  * @author Kristhal
  */
-public class SimboloGK extends Value implements Cloneable {
+public class SimboloGK implements Cloneable {
     private String id;
     private String tipo_variable;
     private Object valor;
     private String ambito;
     private int numero_parametros;
-    private int tipo;
+    private int tipogk;
     private int orden=0;
     public List<SimboloGK> elementosArreglo;
+    private int n_dimensiones;
+    private List<Integer> tamDimensiones;
     public int linea;
     public int columna;
-    private int visibilidad;
+    private String visibilidad;
+    private String rol;
+    private int key;
     
     public SimboloGK()
     {
         this.id="";
         this.tipo_variable="";
         this.valor=new Object();
-        this.tipo=-1;
+        this.tipogk=-1;
         this.numero_parametros=0;
         this.elementosArreglo=new ArrayList();
+        this.key=0;
     }
     
     @Override
@@ -49,6 +54,7 @@ public class SimboloGK extends Value implements Cloneable {
         this.valor=valor;
         this.ambito=ambito;
         this.elementosArreglo=new ArrayList();
+        this.key=0;
     }
     
     public SimboloGK(String tipo_variable, String id, Object valor, String ambito, int tipo)
@@ -57,8 +63,9 @@ public class SimboloGK extends Value implements Cloneable {
         this.tipo_variable=tipo_variable;
         this.valor=valor;
         this.ambito=ambito;
-        this.tipo=tipo;
+        this.tipogk=tipo;
         this.elementosArreglo=new ArrayList();
+        this.key=0;
     }
 
     public String getId() {
@@ -99,14 +106,6 @@ public class SimboloGK extends Value implements Cloneable {
 
     public void setNumeroParametros(int numero_parametros) {
         this.numero_parametros = numero_parametros;
-    }
-
-    public int getTipoGK() {
-        return tipo;
-    }
-
-    public void setTipoGK(int tipo) {
-        this.tipo = tipo;
     }
 
     public int getOrden() {
@@ -157,11 +156,45 @@ public class SimboloGK extends Value implements Cloneable {
         this.numero_parametros = numero_parametros;
     }
 
-    public int getVisibilidad() {
+    public String getVisibilidad() {
         return visibilidad;
     }
 
-    public void setVisibilidad(int visibilidad) {
+    public void setVisibilidad(String visibilidad) {
         this.visibilidad = visibilidad;
     }
+
+    public String getRol() {
+        return rol;
+    }
+
+    public void setRol(String rol) {
+        this.rol = rol;
+    }
+
+    public int getN_dimensiones() {
+        return n_dimensiones;
+    }
+
+    public void setN_dimensiones(int n_dimensiones) {
+        this.n_dimensiones = n_dimensiones;
+    }
+
+    public int getTipogk() {
+        return tipogk;
+    }
+
+    public void setTipogk(int tipogk) {
+        this.tipogk = tipogk;
+    }
+
+    public int getKey() {
+        return key;
+    }
+
+    public void setKey(int key) {
+        this.key = key;
+    }
+    
+    
 }

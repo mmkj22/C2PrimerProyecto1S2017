@@ -86,12 +86,13 @@ public class lexicoGraphik implements java_cup.runtime.Scanner {
     "\2\74\1\0\2\2\1\75\2\2\2\76\1\0\1\2"+
     "\2\77\1\100\1\0\1\2\1\0\1\101\1\102\1\2"+
     "\1\101\1\102\2\103\1\0\1\2\2\104\1\0\1\2"+
-    "\1\105\1\106\1\107\2\110\2\111\1\0\1\2\2\112"+
-    "\1\0\1\2\2\113\1\0\1\2\1\0\1\2\1\0"+
-    "\1\2\1\0\1\2\1\0\1\2\1\0\1\2\2\114";
+    "\1\105\1\106\1\107\2\110\2\111\1\0\1\112\1\2"+
+    "\1\112\2\113\1\0\1\2\2\114\1\0\1\2\1\0"+
+    "\1\2\1\0\1\2\1\0\1\2\1\0\1\2\1\0"+
+    "\1\2\2\115";
 
   private static int [] zzUnpackAction() {
-    int [] result = new int[367];
+    int [] result = new int[369];
     int offset = 0;
     offset = zzUnpackAction(ZZ_ACTION_PACKED_0, offset, result);
     return result;
@@ -156,15 +157,16 @@ public class lexicoGraphik implements java_cup.runtime.Scanner {
     "\0\u3b4f\0\u3b8e\0\u3bcd\0\u3c0c\0\u3c4b\0\u3c8a\0\u3cc9\0\u3d08"+
     "\0\u3d47\0\77\0\374\0\77\0\374\0\u3d86\0\u3dc5\0\u3e04"+
     "\0\374\0\u3e43\0\u3e82\0\374\0\77\0\u3ec1\0\u3f00\0\77"+
-    "\0\374\0\374\0\u3f3f\0\u3f7e\0\u3fbd\0\77\0\77\0\u3ffc"+
-    "\0\374\0\374\0\77\0\374\0\u403b\0\u407a\0\77\0\374"+
-    "\0\u40b9\0\u40f8\0\374\0\374\0\374\0\77\0\374\0\77"+
-    "\0\374\0\u4137\0\u4176\0\77\0\374\0\u41b5\0\u41f4\0\77"+
-    "\0\374\0\u4233\0\u4272\0\u42b1\0\u42f0\0\u432f\0\u436e\0\u43ad"+
-    "\0\u43ec\0\u442b\0\u446a\0\u44a9\0\u44e8\0\77\0\374";
+    "\0\374\0\374\0\u3f3f\0\u3f7e\0\u3fbd\0\u3ffc\0\77\0\u403b"+
+    "\0\u407a\0\374\0\77\0\374\0\u40b9\0\u40f8\0\77\0\374"+
+    "\0\u4137\0\u4176\0\374\0\374\0\374\0\77\0\374\0\77"+
+    "\0\374\0\u41b5\0\77\0\u41f4\0\374\0\77\0\374\0\u4233"+
+    "\0\u4272\0\77\0\374\0\u42b1\0\u42f0\0\u432f\0\u436e\0\u43ad"+
+    "\0\u43ec\0\u442b\0\u446a\0\u44a9\0\u44e8\0\u4527\0\u4566\0\77"+
+    "\0\374";
 
   private static int [] zzUnpackRowMap() {
-    int [] result = new int[367];
+    int [] result = new int[369];
     int offset = 0;
     offset = zzUnpackRowMap(ZZ_ROWMAP_PACKED_0, offset, result);
     return result;
@@ -647,39 +649,42 @@ public class lexicoGraphik implements java_cup.runtime.Scanner {
     "\1\0\1\5\52\0\1\u0158\37\0\1\5\6\0\1\5"+
     "\1\0\1\5\1\0\1\67\12\0\4\5\3\0\2\5"+
     "\1\u0159\5\5\1\0\4\5\1\0\7\5\1\0\1\5"+
-    "\74\0\1\u015a\15\0\1\5\6\0\1\5\1\0\1\5"+
-    "\1\0\1\67\12\0\4\5\3\0\10\5\1\0\4\5"+
-    "\1\0\6\5\1\u015b\1\0\1\5\55\0\1\u015c\34\0"+
-    "\1\5\6\0\1\5\1\0\1\5\1\0\1\67\12\0"+
-    "\4\5\3\0\5\5\1\u015d\2\5\1\0\4\5\1\0"+
-    "\7\5\1\0\1\5\24\0\1\u015e\65\0\1\5\6\0"+
-    "\1\5\1\0\1\u015f\1\0\1\67\12\0\4\5\3\0"+
-    "\10\5\1\0\4\5\1\0\7\5\1\0\1\5\44\0"+
-    "\1\u0160\30\0\2\u0160\13\0\1\5\6\0\1\5\1\0"+
-    "\1\5\1\0\1\67\12\0\3\5\1\u0161\3\0\10\5"+
-    "\1\0\4\5\1\0\7\5\1\u0160\1\u0161\56\0\1\u0162"+
-    "\33\0\1\5\6\0\1\5\1\0\1\5\1\0\1\67"+
-    "\12\0\4\5\3\0\6\5\1\u0163\1\5\1\0\4\5"+
-    "\1\0\7\5\1\0\1\5\72\0\1\u0164\17\0\1\5"+
+    "\74\0\1\u015a\46\0\1\u015b\30\0\2\u015b\13\0\1\5"+
     "\6\0\1\5\1\0\1\5\1\0\1\67\12\0\4\5"+
-    "\3\0\10\5\1\0\4\5\1\0\4\5\1\u0165\2\5"+
-    "\1\0\1\5\62\0\1\u0166\27\0\1\5\6\0\1\5"+
-    "\1\0\1\5\1\0\1\67\12\0\4\5\3\0\10\5"+
-    "\1\0\1\5\1\u0167\2\5\1\0\7\5\1\0\1\5"+
-    "\64\0\1\u0168\25\0\1\5\6\0\1\5\1\0\1\5"+
-    "\1\0\1\67\12\0\4\5\3\0\10\5\1\0\3\5"+
-    "\1\u0169\1\0\7\5\1\0\1\5\65\0\2\u016a\23\0"+
+    "\3\0\10\5\1\0\4\5\1\0\6\5\1\u015c\1\0"+
+    "\1\5\13\0\1\5\6\0\1\5\1\0\1\5\1\0"+
+    "\1\67\12\0\3\5\1\u015d\3\0\10\5\1\0\4\5"+
+    "\1\0\7\5\1\u015b\1\u015d\55\0\1\u015e\34\0\1\5"+
+    "\6\0\1\5\1\0\1\5\1\0\1\67\12\0\4\5"+
+    "\3\0\5\5\1\u015f\2\5\1\0\4\5\1\0\7\5"+
+    "\1\0\1\5\24\0\1\u0160\65\0\1\5\6\0\1\5"+
+    "\1\0\1\u0161\1\0\1\67\12\0\4\5\3\0\10\5"+
+    "\1\0\4\5\1\0\7\5\1\0\1\5\44\0\1\u0162"+
+    "\30\0\2\u0162\13\0\1\5\6\0\1\5\1\0\1\5"+
+    "\1\0\1\67\12\0\3\5\1\u0163\3\0\10\5\1\0"+
+    "\4\5\1\0\7\5\1\u0162\1\u0163\56\0\1\u0164\33\0"+
     "\1\5\6\0\1\5\1\0\1\5\1\0\1\67\12\0"+
-    "\4\5\3\0\10\5\1\0\4\5\1\u016a\1\u016b\6\5"+
-    "\1\0\1\5\55\0\1\u016c\34\0\1\5\6\0\1\5"+
-    "\1\0\1\5\1\0\1\67\12\0\4\5\3\0\5\5"+
-    "\1\u016d\2\5\1\0\4\5\1\0\7\5\1\0\1\5"+
-    "\62\0\1\u016e\27\0\1\5\6\0\1\5\1\0\1\5"+
-    "\1\0\1\67\12\0\4\5\3\0\10\5\1\0\1\5"+
-    "\1\u016f\2\5\1\0\7\5\1\0\1\5\10\0";
+    "\4\5\3\0\6\5\1\u0165\1\5\1\0\4\5\1\0"+
+    "\7\5\1\0\1\5\72\0\1\u0166\17\0\1\5\6\0"+
+    "\1\5\1\0\1\5\1\0\1\67\12\0\4\5\3\0"+
+    "\10\5\1\0\4\5\1\0\4\5\1\u0167\2\5\1\0"+
+    "\1\5\62\0\1\u0168\27\0\1\5\6\0\1\5\1\0"+
+    "\1\5\1\0\1\67\12\0\4\5\3\0\10\5\1\0"+
+    "\1\5\1\u0169\2\5\1\0\7\5\1\0\1\5\64\0"+
+    "\1\u016a\25\0\1\5\6\0\1\5\1\0\1\5\1\0"+
+    "\1\67\12\0\4\5\3\0\10\5\1\0\3\5\1\u016b"+
+    "\1\0\7\5\1\0\1\5\65\0\2\u016c\23\0\1\5"+
+    "\6\0\1\5\1\0\1\5\1\0\1\67\12\0\4\5"+
+    "\3\0\10\5\1\0\4\5\1\u016c\1\u016d\6\5\1\0"+
+    "\1\5\55\0\1\u016e\34\0\1\5\6\0\1\5\1\0"+
+    "\1\5\1\0\1\67\12\0\4\5\3\0\5\5\1\u016f"+
+    "\2\5\1\0\4\5\1\0\7\5\1\0\1\5\62\0"+
+    "\1\u0170\27\0\1\5\6\0\1\5\1\0\1\5\1\0"+
+    "\1\67\12\0\4\5\3\0\10\5\1\0\1\5\1\u0171"+
+    "\2\5\1\0\7\5\1\0\1\5\10\0";
 
   private static int [] zzUnpackTrans() {
-    int [] result = new int[17703];
+    int [] result = new int[17829];
     int offset = 0;
     offset = zzUnpackTrans(ZZ_TRANS_PACKED_0, offset, result);
     return result;
@@ -735,14 +740,15 @@ public class lexicoGraphik implements java_cup.runtime.Scanner {
     "\1\1\1\0\3\1\1\0\1\1\3\0\3\1\1\0"+
     "\1\1\1\0\1\1\1\0\1\1\1\11\1\1\1\11"+
     "\1\1\1\0\6\1\1\11\1\0\1\1\1\11\2\1"+
-    "\1\0\1\1\1\0\2\11\3\1\1\11\1\1\1\0"+
-    "\1\1\1\11\1\1\1\0\4\1\1\11\1\1\1\11"+
-    "\1\1\1\0\1\1\1\11\1\1\1\0\1\1\1\11"+
-    "\1\1\1\0\1\1\1\0\1\1\1\0\1\1\1\0"+
-    "\1\1\1\0\1\1\1\0\1\1\1\11\1\1";
+    "\1\0\1\1\1\0\1\1\1\11\3\1\1\11\1\1"+
+    "\1\0\1\1\1\11\1\1\1\0\4\1\1\11\1\1"+
+    "\1\11\1\1\1\0\1\11\2\1\1\11\1\1\1\0"+
+    "\1\1\1\11\1\1\1\0\1\1\1\0\1\1\1\0"+
+    "\1\1\1\0\1\1\1\0\1\1\1\0\1\1\1\11"+
+    "\1\1";
 
   private static int [] zzUnpackAttribute() {
-    int [] result = new int[367];
+    int [] result = new int[369];
     int offset = 0;
     offset = zzUnpackAttribute(ZZ_ATTRIBUTE_PACKED_0, offset, result);
     return result;
@@ -1204,380 +1210,385 @@ public class lexicoGraphik implements java_cup.runtime.Scanner {
           { System.out.println("Error en el token: " + yytext() + "linea: "+ yyline);
                         reportarError((yyline+1), (yycolumn+1), "El token "+ yytext()+" no forma parte del lenguaje");
           }
-        case 77: break;
+        case 78: break;
         case 2: 
           { System.out.println("Entro id");
                     return new Symbol(symG.identificador, yyline, yycolumn, new String(yytext()));
           }
-        case 78: break;
+        case 79: break;
         case 3: 
           { System.out.println("Entro !");
                     return new Symbol(symG.tkn_not, yyline, yycolumn, new String(yytext()));
           }
-        case 79: break;
+        case 80: break;
         case 4: 
           { System.out.println("Entro =");
                     return new Symbol(symG.igual, yyline, yycolumn, new String(yytext()));
           }
-        case 80: break;
+        case 81: break;
         case 5: 
           { System.out.println("Entro ?");
                     return new Symbol(symG.int_der, yyline, yycolumn, new String(yytext()));
           }
-        case 81: break;
+        case 82: break;
         case 6: 
           { System.out.println("Entro -");
                     return new Symbol(symG.menos, yyline, yycolumn, new String(yytext()));
           }
-        case 82: break;
+        case 83: break;
         case 7: 
           { System.out.println("Entro .");
                     return new Symbol(symG.punto, yyline, yycolumn, new String(yytext()));
           }
-        case 83: break;
+        case 84: break;
         case 8: 
           { System.out.println("Entro ,");
                     return new Symbol(symG.coma, yyline, yycolumn, new String(yytext()));
           }
-        case 84: break;
+        case 85: break;
         case 9: 
           { System.out.println("Entro <");
                     return new Symbol(symG.menor, yyline, yycolumn, new String(yytext()));
           }
-        case 85: break;
+        case 86: break;
         case 10: 
           { System.out.println("Entro >");
                     return new Symbol(symG.mayor, yyline, yycolumn, new String(yytext()));
           }
-        case 86: break;
+        case 87: break;
         case 11: 
           { System.out.println("Entro [");
                     return new Symbol(symG.cor_izq, yyline, yycolumn, new String(yytext()));
           }
-        case 87: break;
+        case 88: break;
         case 12: 
           { System.out.println("Entro ]");
                     return new Symbol(symG.cor_der, yyline, yycolumn, new String(yytext()));
           }
-        case 88: break;
+        case 89: break;
         case 13: 
           { System.out.println("Entro +");
                     return new Symbol(symG.mas, yyline, yycolumn, new String(yytext()));
           }
-        case 89: break;
+        case 90: break;
         case 14: 
           { System.out.println("Entro *");
                     return new Symbol(symG.por, yyline, yycolumn, new String(yytext()));
           }
-        case 90: break;
+        case 91: break;
         case 15: 
           { System.out.println("Entro *");
                     return new Symbol(symG.potencia, yyline, yycolumn, new String(yytext()));
           }
-        case 91: break;
+        case 92: break;
         case 16: 
           { System.out.println("Entro numero");
                     return new Symbol(symG.numero, yyline, yycolumn, new String(yytext()));
           }
-        case 92: break;
+        case 93: break;
         case 17: 
           { /* Se ignoran */
           }
-        case 93: break;
+        case 94: break;
         case 18: 
           { System.out.println("Entro /");
                     return new Symbol(symG.div, yyline, yycolumn, new String(yytext()));
           }
-        case 94: break;
+        case 95: break;
         case 19: 
           { System.out.println("Entro (");
                     return new Symbol(symG.par_izq, yyline, yycolumn, new String(yytext()));
           }
-        case 95: break;
+        case 96: break;
         case 20: 
           { System.out.println("Entro )");
                     return new Symbol(symG.par_der, yyline, yycolumn, new String(yytext()));
           }
-        case 96: break;
+        case 97: break;
         case 21: 
           { System.out.println("Entro {");
                     return new Symbol(symG.llave_izq, yyline, yycolumn, new String(yytext()));
           }
-        case 97: break;
+        case 98: break;
         case 22: 
           { System.out.println("Entro }");
                     return new Symbol(symG.llave_der, yyline, yycolumn, new String(yytext()));
           }
-        case 98: break;
+        case 99: break;
         case 23: 
           { System.out.println("Entro :");
                     return new Symbol(symG.dosp, yyline, yycolumn, new String(yytext()));
           }
-        case 99: break;
+        case 100: break;
         case 24: 
           { System.out.println("Entro texto");
                     return new Symbol(symG.texto, yyline, yycolumn, new String(yytext()));
           }
-        case 100: break;
+        case 101: break;
         case 25: 
           { System.out.println("Entro Caracter");
                     return new Symbol(symG.caracter, yyline, yycolumn, new String(yytext()));
           }
-        case 101: break;
+        case 102: break;
         case 26: 
           { System.out.println("Entro !=");
                     return new Symbol(symG.diferente, yyline, yycolumn, new String(yytext()));
           }
-        case 102: break;
+        case 103: break;
         case 27: 
           { System.out.println("Entro ==");
                     return new Symbol(symG.igualacion, yyline, yycolumn, new String(yytext()));
           }
-        case 103: break;
+        case 104: break;
         case 28: 
           { System.out.println("Entro --");
                     return new Symbol(symG.decremento, yyline, yycolumn, new String(yytext()));
           }
-        case 104: break;
+        case 105: break;
         case 29: 
           { System.out.println("Entro <=");
                     return new Symbol(symG.menor_igual, yyline, yycolumn, new String(yytext()));
           }
-        case 105: break;
+        case 106: break;
         case 30: 
           { System.out.println("Entro >=");
                     return new Symbol(symG.mayor_igual, yyline, yycolumn, new String(yytext()));
           }
-        case 106: break;
+        case 107: break;
         case 31: 
           { 
           }
-        case 107: break;
+        case 108: break;
         case 32: 
           { System.out.println("Entro ++");
                     return new Symbol(symG.aumento, yyline, yycolumn, new String(yytext()));
           }
-        case 108: break;
+        case 109: break;
         case 33: 
           { System.out.println("Entro &&");
                     return new Symbol(symG.tkn_and, yyline, yycolumn, new String(yytext()));
           }
-        case 109: break;
+        case 110: break;
         case 34: 
           { System.out.println("Entro &|");
                     return new Symbol(symG.tkn_xor, yyline, yycolumn, new String(yytext()));
           }
-        case 110: break;
+        case 111: break;
         case 35: 
           { System.out.println("Entro Si");
                     return new Symbol(symG.tkn_si, yyline, yycolumn, new String(yytext()));
           }
-        case 111: break;
+        case 112: break;
         case 36: 
           { System.out.println("Entro ||");
                     return new Symbol(symG.tkn_or, yyline, yycolumn, new String(yytext()));
           }
-        case 112: break;
+        case 113: break;
         case 37: 
           { System.out.println("Entro decimal");
                     return new Symbol(symG.decimal, yyline, yycolumn, new String(yytext()));
           }
-        case 113: break;
+        case 114: break;
         case 38: 
           { System.out.println("Entro var");
                     return new Symbol(symG.tkn_var, yyline, yycolumn, new String(yytext()));
           }
-        case 114: break;
+        case 115: break;
         case 39: 
           { System.out.println("Entro ALS");
                     return new Symbol(symG.tkn_als, yyline, yycolumn, new String(yytext()));
           }
-        case 115: break;
+        case 116: break;
         case 40: 
           { System.out.println("Entro nombreArchivo");
                     return new Symbol(symG.nombreArchivo, yyline, yycolumn, new String(yytext()));
           }
-        case 116: break;
+        case 117: break;
         case 41: 
           { System.out.println("Entro Sino");
                     return new Symbol(symG.tkn_sino, yyline, yycolumn, new String(yytext()));
           }
-        case 117: break;
+        case 118: break;
         case 42: 
           { System.out.println("Entro caso");
                     return new Symbol(symG.tkn_caso, yyline, yycolumn, new String(yytext()));
           }
-        case 118: break;
+        case 119: break;
         case 43: 
           { System.out.println("Entro bool");
                     return new Symbol(symG.tkn_bool, yyline, yycolumn, new String(yytext()));
           }
-        case 119: break;
+        case 120: break;
         case 44: 
           { System.out.println("Entro Para");
                     return new Symbol(symG.tkn_para, yyline, yycolumn, new String(yytext()));
           }
-        case 120: break;
+        case 121: break;
         case 45: 
           { System.out.println("Entro vacio");
                     return new Symbol(symG.tkn_vacio, yyline, yycolumn, new String(yytext()));
           }
-        case 121: break;
+        case 122: break;
         case 46: 
           { System.out.println("Entro Datos");
                     return new Symbol(symG.tkn_datos, yyline, yycolumn, new String(yytext()));
           }
-        case 122: break;
+        case 123: break;
         case 47: 
           { System.out.println("Entro Donde");
                     return new Symbol(symG.tkn_donde, yyline, yycolumn, new String(yytext()));
           }
-        case 123: break;
+        case 124: break;
         case 48: 
           { System.out.println("Entro falso");
                     return new Symbol(symG.tkn_falso, yyline, yycolumn, new String(yytext()));
           }
-        case 124: break;
+        case 125: break;
         case 49: 
           { System.out.println("Entro nuevo");
                     return new Symbol(symG.tkn_nuevo, yyline, yycolumn, new String(yytext()));
           }
-        case 125: break;
+        case 126: break;
         case 50: 
           { System.out.println("Entro Hacer");
                     return new Symbol(symG.tkn_hacer, yyline, yycolumn, new String(yytext()));
           }
-        case 126: break;
+        case 127: break;
         case 51: 
           { System.out.println("Entro entero");
                     return new Symbol(symG.tkn_entero, yyline, yycolumn, new String(yytext()));
           }
-        case 127: break;
+        case 128: break;
         case 52: 
           { System.out.println("Entro llamar");
                     return new Symbol(symG.tkn_llamar, yyline, yycolumn, new String(yytext()));
           }
-        case 128: break;
+        case 129: break;
         case 53: 
           { System.out.println("Entro cadena");
                     return new Symbol(symG.tkn_cadena, yyline, yycolumn, new String(yytext()));
           }
-        case 129: break;
+        case 130: break;
         case 54: 
           { System.out.println("Entro inicio");
                     return new Symbol(symG.tkn_inicio, yyline, yycolumn, new String(yytext()));
           }
-        case 130: break;
+        case 131: break;
         case 55: 
           { System.out.println("Entro hereda");
                     return new Symbol(symG.tkn_hereda, yyline, yycolumn, new String(yytext()));
           }
-        case 131: break;
+        case 132: break;
         case 56: 
           { System.out.println("Entro Defecto");
                     return new Symbol(symG.tkn_defecto, yyline, yycolumn, new String(yytext()));
           }
-        case 132: break;
+        case 133: break;
         case 57: 
           { System.out.println("Entro decimal");
                     return new Symbol(symG.tkn_decimal, yyline, yycolumn, new String(yytext()));
           }
-        case 133: break;
+        case 134: break;
         case 58: 
           { System.out.println("Entro Columna");
                     return new Symbol(symG.tkn_columna, yyline, yycolumn, new String(yytext()));
           }
-        case 134: break;
+        case 135: break;
         case 59: 
           { System.out.println("Entro privado");
                     return new Symbol(symG.tkn_privado, yyline, yycolumn, new String(yytext()));
           }
-        case 135: break;
+        case 136: break;
         case 60: 
           { System.out.println("Entro publico");
                     return new Symbol(symG.tkn_publico, yyline, yycolumn, new String(yytext()));
           }
-        case 136: break;
+        case 137: break;
         case 61: 
           { System.out.println("Entro retornar");
                     return new Symbol(symG.tkn_retornar, yyline, yycolumn, new String(yytext()));
           }
-        case 137: break;
+        case 138: break;
         case 62: 
           { System.out.println("Entro llamarHK");
                     return new Symbol(symG.tkn_llamarHK, yyline, yycolumn, new String(yytext()));
           }
-        case 138: break;
+        case 139: break;
         case 63: 
           { System.out.println("Entro Terminar");
                     return new Symbol(symG.tkn_terminar, yyline, yycolumn, new String(yytext()));
           }
-        case 139: break;
+        case 140: break;
         case 64: 
           { System.out.println("Entro caracter");
                     return new Symbol(symG.tkn_caracter, yyline, yycolumn, new String(yytext()));
           }
-        case 140: break;
+        case 141: break;
         case 65: 
           { System.out.println("Entro imprimir");
                     return new Symbol(symG.tkn_imprimir, yyline, yycolumn, new String(yytext()));
           }
-        case 141: break;
+        case 142: break;
         case 66: 
           { System.out.println("Entro importar");
                     return new Symbol(symG.tkn_importar, yyline, yycolumn, new String(yytext()));
           }
-        case 142: break;
+        case 143: break;
         case 67: 
           { System.out.println("Entro Mientras");
                     return new Symbol(symG.tkn_mientras, yyline, yycolumn, new String(yytext()));
           }
-        case 143: break;
+        case 144: break;
         case 68: 
           { System.out.println("Entro Procesar");
                     return new Symbol(symG.tkn_procesar, yyline, yycolumn, new String(yytext()));
           }
-        case 144: break;
+        case 145: break;
         case 69: 
           { System.out.println("Entro verdadero");
                     return new Symbol(symG.tkn_verdadero, yyline, yycolumn, new String(yytext()));
           }
-        case 145: break;
+        case 146: break;
         case 70: 
           { System.out.println("Entro DondeTodo");
                     return new Symbol(symG.tkn_dondetodo, yyline, yycolumn, new String(yytext()));
           }
-        case 146: break;
+        case 147: break;
         case 71: 
           { System.out.println("Entro DondeCada");
                     return new Symbol(symG.tkn_dondecada, yyline, yycolumn, new String(yytext()));
           }
-        case 147: break;
+        case 148: break;
         case 72: 
           { System.out.println("Entro seleccion");
                     return new Symbol(symG.tkn_seleccion, yyline, yycolumn, new String(yytext()));
           }
-        case 148: break;
+        case 149: break;
         case 73: 
           { System.out.println("Entro Continuar");
                     return new Symbol(symG.tkn_continuar, yyline, yycolumn, new String(yytext()));
           }
-        case 149: break;
+        case 150: break;
         case 74: 
+          { System.out.println("Entro imprimir");
+                    return new Symbol(symG.tkn_imprimirK, yyline, yycolumn, new String(yytext()));
+          }
+        case 151: break;
+        case 75: 
           { System.out.println("Entro protegido");
                     return new Symbol(symG.tkn_protegido, yyline, yycolumn, new String(yytext()));
           }
-        case 150: break;
-        case 75: 
+        case 152: break;
+        case 76: 
           { System.out.println("Entro incluir_HK");
                     return new Symbol(symG.tkn_incluirHK, yyline, yycolumn, new String(yytext()));
           }
-        case 151: break;
-        case 76: 
+        case 153: break;
+        case 77: 
           { System.out.println("Entro graphikar_funcion");
                         return new Symbol(symG.tkn_graphikar, yyline, yycolumn, new String(yytext()));
           }
-        case 152: break;
+        case 154: break;
         default: 
           if (zzInput == YYEOF && zzStartRead == zzCurrentPos) {
             zzAtEOF = true;

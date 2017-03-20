@@ -159,6 +159,9 @@ CommentContent       = ( [^*] | \*+ [^/*] )*
 "imprimir"      {   System.out.println("Entro imprimir");
                     return new Symbol(symG.tkn_imprimir, yyline, yycolumn, new String(yytext()));
                 }
+"imprimirK"      {   System.out.println("Entro imprimir");
+                    return new Symbol(symG.tkn_imprimirK, yyline, yycolumn, new String(yytext()));
+                }
 
 //BASICA
 {texto}         {   System.out.println("Entro texto");

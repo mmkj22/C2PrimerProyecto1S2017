@@ -6,8 +6,6 @@
 package GUI;
 
 import Haskell.NodoHK;
-import Graphik.RecorridoAST;
-import Graphik.NodoGK;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
@@ -23,6 +21,7 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import Errores.*;
+import Graphik.*;
 import Haskell.*;
 import java.awt.Desktop;
 import java.awt.event.KeyEvent;
@@ -32,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -353,6 +353,7 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
                 dibujarGK(pintarGK(pars.nodo,""));
                 RecorridoAST recorre = new RecorridoAST(pars.nodo);
                 recorre.primeraPasada(actual.getRuta(), actual.getNombre());
+                EjecutarGK ejecucion = new EjecutarGK(pars.nodo);
                 mostrarErrores("Graphik");
             } 
             catch (Exception ex) {
@@ -480,8 +481,6 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
         this.setLayout(new BorderLayout());
         this.add(splitPane, BorderLayout.CENTER);
         splitPane.setResizeWeight(0.7);
-        
-        
         
     }
 
