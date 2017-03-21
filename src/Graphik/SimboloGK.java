@@ -140,14 +140,6 @@ public class SimboloGK implements Cloneable {
         this.columna = columna;
     }
 
-    public String getTipo_variable() {
-        return tipo_variable;
-    }
-
-    public void setTipo_variable(String tipo_variable) {
-        this.tipo_variable = tipo_variable;
-    }
-
     public int getNumero_parametros() {
         return numero_parametros;
     }

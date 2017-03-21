@@ -46,6 +46,13 @@ public class Resultado extends Value{
         this.valorgk=""+val;
     }
     
+    public Resultado(String tipo, boolean val)
+    {
+        this.tipogk=tipo;
+        this.valBool=val;
+        this.valorgk =""+value;
+    }
+    
     public Resultado(String tipo, double val)
     {
         this.tipogk=tipo;

@@ -344,6 +344,7 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
         if(actual!=null){
             try { 
                 reiniciarAnalisis();
+                TablaSimbolosGK.listaClases.clear();
                 String input=actual.txtEntrada.getText();
                 Reader reader = new StringReader(input);
                 Analisis.lexicoGraphik scan = new Analisis.lexicoGraphik(reader);
@@ -353,7 +354,8 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
                 dibujarGK(pintarGK(pars.nodo,""));
                 RecorridoAST recorre = new RecorridoAST(pars.nodo);
                 recorre.primeraPasada(actual.getRuta(), actual.getNombre());
-                EjecutarGK ejecucion = new EjecutarGK(pars.nodo);
+                //Map<String, ClaseGK> listaClases = TablaSimbolosGK.getInstance().getHash();
+                EjecutarGK ejecucion = new EjecutarGK(pars.nodo, txtConsola);
                 mostrarErrores("Graphik");
             } 
             catch (Exception ex) {

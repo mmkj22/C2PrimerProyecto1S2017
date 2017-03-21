@@ -103,5 +103,38 @@ public class ClaseGK {
         this.nodo = nodo;
     }
     
+    public void declararMet(MetodoGK nodo)
+    {
+        this.metodos.put(nodo.getId(), nodo);
+    }
+    
+    public boolean existeMet(String nombre)
+    {
+        if(this.metodos.containsKey(nombre))
+        {
+            return true;
+        }   
+        else
+        {
+            return false;
+        }
+    }
+    
+    public void declararVar(SimboloGK nodo)
+    {
+        this.varGlobales.put(nodo.getId(), nodo);
+    }
+    
+    public boolean existeVar(String nombre)
+    {
+        if(this.varGlobales.containsKey(nombre))
+        {
+            return true;
+        }   
+        else
+        {
+            return false;
+        }
+    }
     
 }

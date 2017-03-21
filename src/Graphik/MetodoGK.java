@@ -135,4 +135,38 @@ public class MetodoGK {
             System.out.println("id metodo: "+this.id+" id: "+s.getId()+" ambito "+s.getAmbito()+" valor:"+s.getTipoVariable());
         }
     }
+    
+    public void declararVar(SimboloGK nodo)
+    {
+        this.varLocales.put(nodo.getId(), nodo);
+    }
+    
+    public boolean existeVar(String nombre)
+    {
+        if(this.varLocales.containsKey(nombre))
+        {
+            return true;
+        }   
+        else
+        {
+            return false;
+        }
+    }
+    
+    public void declararPar(SimboloGK nodo)
+    {
+        this.parametros.put(nodo.getId(), nodo);
+    }
+    
+    public boolean existePar(String nombre)
+    {
+        if(this.parametros.containsKey(nombre))
+        {
+            return true;
+        }   
+        else
+        {
+            return false;
+        }
+    }
 }

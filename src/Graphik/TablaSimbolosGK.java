@@ -14,11 +14,13 @@ import java.util.TreeMap;
  */
 public class TablaSimbolosGK {
     public static Map<String, ClaseGK> listaClases = new TreeMap(String.CASE_INSENSITIVE_ORDER);
+    public static String claseCompilar;
     private static TablaSimbolosGK tablaGK = null;
     
     public TablaSimbolosGK()
     {
         listaClases=new TreeMap(String.CASE_INSENSITIVE_ORDER);
+        claseCompilar="";
     }
     
     public static TablaSimbolosGK resetInstance()

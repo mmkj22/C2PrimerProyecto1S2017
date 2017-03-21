@@ -34,15 +34,16 @@ public class RecorridoAST {
     ClaseGK clase;
     MetodoGK nuevoMetodo;
     String claseActual;
+    String parametros;
 
     public RecorridoAST(NodoGK raiz) {
         this.raiz = raiz;
         lista_ids = new ArrayList();
         lista_vis = new ArrayList();
-        linea=new ArrayList();
-        columna=new ArrayList();
+        linea = new ArrayList();
+        columna = new ArrayList();
     }
-
+    
     public void primeraPasada(String ruta, String name) {
         this.rutaOficial = ruta;
         if (raiz != null) {
@@ -78,12 +79,18 @@ public class RecorridoAST {
     }
 
     private void listaClase(NodoGK n, String nombre) {
+        int contador = 0;
         for (NodoGK nodo : n.hijos) {
+            if(contador==0)
+            {
+                TablaSimbolosGK.claseCompilar=nodo.hijos.get(0).valor;
+            }
             clase = new ClaseGK(nodo.hijos.get(0).valor, nodo.hijos.get(1).valor);
             claseActual = nodo.hijos.get(0).valor;
             clase.setNodo(nodo.hijos.get(2));
             pasada1("", nodo.hijos.get(2));
             RecorridoAST.listaClases.put(clase.getId(), clase);
+            contador++;
         }
     }
 
@@ -119,8 +126,10 @@ public class RecorridoAST {
                 if (nodo.valor.equals("METODO")) {
                     rol = "met";
                     contParametros = 0;
+                    parametros = "";
                     nuevoMetodo = new MetodoGK();
                     ambito_variable = "_" + nodo.hijos.get(0).valor;
+                    nombre = nodo.hijos.get(0).valor;
                     nuevoMetodo.setId(nodo.hijos.get(0).valor);
                     nuevoMetodo.setLinea(nodo.hijos.get(0).getLinea());
                     nuevoMetodo.setColumna(nodo.hijos.get(0).getColumna());
@@ -130,14 +139,21 @@ public class RecorridoAST {
                     nuevoMetodo.setAmbito(claseActual);
                     if (!nodo.hijos.get(1).valor.equals("sinparametros")) {
                         recorrerParametros(ambito, nodo.hijos.get(1));
+                        nombre = nombre + parametros;
                     }
                     this.pasada1(ambito_variable, nodo.hijos.get(3));
-                    clase.metodos.put(nodo.hijos.get(0).valor, nuevoMetodo);
+                    if (!clase.existeMet(nombre)) {
+                        clase.metodos.put(nombre, nuevoMetodo);
+                    } else {
+                        //ERROR YA EXISTE
+                    }
                 } else if (nodo.valor.equals("FUNCION")) {
                     rol = "func";
                     contParametros = 0;
+                    parametros = "";
                     nuevoMetodo = new MetodoGK();
                     ambito_variable = nodo.hijos.get(1).valor;
+                    nombre = nodo.hijos.get(1).valor;
                     nuevoMetodo.setId(nodo.hijos.get(1).valor);
                     nuevoMetodo.setLinea(nodo.hijos.get(1).getLinea());
                     nuevoMetodo.setColumna(nodo.hijos.get(1).getColumna());
@@ -148,9 +164,14 @@ public class RecorridoAST {
                     nuevoMetodo.setAmbito(claseActual);
                     if (!nodo.hijos.get(2).valor.equals("sinparametros")) {
                         recorrerParametros(ambito, nodo.hijos.get(2));
+                        nombre = nombre + parametros;
                     }
                     this.pasada1(ambito_variable, nodo.hijos.get(4));
-                    clase.metodos.put(nodo.hijos.get(1).valor, nuevoMetodo);
+                    if (!clase.existeMet(nombre)) {
+                        clase.metodos.put(nombre, nuevoMetodo);
+                    } else {
+                        //ERROR YA EXISTE
+                    }
                 } else if (nodo.valor.equals("MAIN")) {
                     rol = "main";
                     nuevoMetodo = new MetodoGK();
@@ -163,7 +184,11 @@ public class RecorridoAST {
                     nuevoMetodo.setSentencias(nodo.hijos.get(0));
                     nuevoMetodo.setAmbito(claseActual);
                     this.pasada1(ambito_variable, nodo.hijos.get(0));
-                    clase.metodos.put("Inicio", nuevoMetodo);
+                    if (!clase.existeMet(nombre)) {
+                        clase.metodos.put("Inicio", nuevoMetodo);
+                    } else {
+                        //ERROR YA EXISTE
+                    }
                 } else if (nodo.valor.equals("DECLARA_ASIG_VAR")) {
                     ambito_variable = ambito;
                     this.hacerDeclaracionAsignacion(nodo);
@@ -189,47 +214,77 @@ public class RecorridoAST {
         for (NodoGK n : nodo.hijos) {
             contParametros++;
             if (n.hijos.get(0).valor.equals("entero")) {
+                parametros += "_entero";
                 nueva_variable = new SimboloGK("entero", n.hijos.get(1).valor, 0, ambito_variable, 0);
                 nueva_variable.setOrden(contParametros);
                 nueva_variable.setLinea(n.hijos.get(1).getLinea());
                 nueva_variable.setColumna(n.hijos.get(1).getColumna());
                 nueva_variable.setRol("param");
-                nuevoMetodo.parametros.put(nueva_variable.getId() + ambito_variable, nueva_variable);
+                if (!nuevoMetodo.existePar(nueva_variable.getId())) {
+                    nuevoMetodo.parametros.put(nueva_variable.getId(), nueva_variable);
+                } else {
+                    //ERROR YA EXISTE
+                }
             } else if (n.hijos.get(0).valor.equals("cadena")) {
+                parametros += "_cadena";
                 nueva_variable = new SimboloGK("cadena", n.hijos.get(1).valor, "", ambito_variable, 0);
                 nueva_variable.setOrden(contParametros);
                 nueva_variable.setLinea(n.hijos.get(1).getLinea());
                 nueva_variable.setColumna(n.hijos.get(1).getColumna());
                 nueva_variable.setRol("param");
-                nuevoMetodo.parametros.put(nueva_variable.getId() + ambito_variable, nueva_variable);
+                if (!nuevoMetodo.existePar(nueva_variable.getId())) {
+                    nuevoMetodo.parametros.put(nueva_variable.getId(), nueva_variable);
+                } else {
+                    //ERROR YA EXISTE
+                }
             } else if (n.hijos.get(0).valor.equals("caracter")) {
+                parametros += "_caracter";
                 nueva_variable = new SimboloGK("caracter", n.hijos.get(1).valor, (char) 32, ambito_variable, 0);
                 nueva_variable.setOrden(contParametros);
                 nueva_variable.setLinea(n.hijos.get(1).getLinea());
                 nueva_variable.setColumna(n.hijos.get(1).getColumna());
                 nueva_variable.setRol("param");
-                nuevoMetodo.parametros.put(nueva_variable.getId() + ambito_variable, nueva_variable);
+                if (!nuevoMetodo.existePar(nueva_variable.getId())) {
+                    nuevoMetodo.parametros.put(nueva_variable.getId(), nueva_variable);
+                } else {
+                    //ERROR YA EXISTE
+                }
             } else if (n.hijos.get(0).valor.equals("decimal")) {
+                parametros += "_decimal";
                 nueva_variable = new SimboloGK("decimal", n.hijos.get(1).valor, 0.00, ambito_variable, 0);
                 nueva_variable.setOrden(contParametros);
                 nueva_variable.setLinea(n.hijos.get(1).getLinea());
                 nueva_variable.setColumna(n.hijos.get(1).getColumna());
                 nueva_variable.setRol("param");
-                nuevoMetodo.parametros.put(nueva_variable.getId() + ambito_variable, nueva_variable);
+                if (!nuevoMetodo.existePar(nueva_variable.getId())) {
+                    nuevoMetodo.parametros.put(nueva_variable.getId(), nueva_variable);
+                } else {
+                    //ERROR YA EXISTE
+                }
             } else if (n.hijos.get(0).valor.equals("bool")) {
+                parametros += "_bool";
                 nueva_variable = new SimboloGK("bool", n.hijos.get(1).valor, false, ambito_variable, 0);
                 nueva_variable.setOrden(contParametros);
                 nueva_variable.setLinea(n.hijos.get(1).getLinea());
                 nueva_variable.setColumna(n.hijos.get(1).getColumna());
                 nueva_variable.setRol("param");
-                nuevoMetodo.parametros.put(nueva_variable.getId() + ambito_variable, nueva_variable);
+                if (!nuevoMetodo.existePar(nueva_variable.getId())) {
+                    nuevoMetodo.parametros.put(nueva_variable.getId(), nueva_variable);
+                } else {
+                    //ERROR YA EXISTE
+                }
             } else {
+                parametros += "_" + n.hijos.get(0).valor;
                 nueva_variable = new SimboloGK(n.hijos.get(0).valor, n.hijos.get(1).valor, new ClaseGK(), ambito_variable, 0);
                 nueva_variable.setOrden(contParametros);
                 nueva_variable.setLinea(n.hijos.get(1).getLinea());
                 nueva_variable.setColumna(n.hijos.get(1).getColumna());
                 nueva_variable.setRol("param");
-                nuevoMetodo.parametros.put(nueva_variable.getId() + ambito_variable, nueva_variable);
+                if (!nuevoMetodo.existePar(nueva_variable.getId())) {
+                    nuevoMetodo.parametros.put(nueva_variable.getId(), nueva_variable);
+                } else {
+                    //ERROR YA EXISTE
+                }
             }
         }
     }
@@ -244,8 +299,6 @@ public class RecorridoAST {
             SimboloGK nueva_variable;
             int contador = 0;
             for (String s : lista_ids) {
-                NodoGK parametro;
-
                 switch (raiz.hijos.get(0).valor) {
                     case "entero":
                         nueva_variable = new SimboloGK("entero", s, 0, ambito_variable, 0);
@@ -254,10 +307,22 @@ public class RecorridoAST {
                         nueva_variable.setColumna(columna.get(contador));
                         nueva_variable.setRol("var");
                         if (!ambito_variable.equals("")) {
-                            nuevoMetodo.varLocales.put(nueva_variable.getId() + "_" + ambito_variable, nueva_variable);
+                            if(!nuevoMetodo.existeVar(nueva_variable.getId()) && !nuevoMetodo.existePar(nueva_variable.getId())){
+                                nuevoMetodo.varLocales.put(nueva_variable.getId(), nueva_variable);
+                            }
+                            else
+                            {
+                            }
                         } else {
                             nueva_variable.setAmbito("global");
-                            clase.varGlobales.put(nueva_variable.getId() + "_global", nueva_variable);
+                            if(!clase.existeVar(nueva_variable.getId()))
+                            {
+                                clase.varGlobales.put(nueva_variable.getId(), nueva_variable);
+                            }
+                            else
+                            {
+                            
+                            }
                         }
                         break;
                     case "cadena":
@@ -267,10 +332,18 @@ public class RecorridoAST {
                         nueva_variable.setLinea(linea.get(contador));
                         nueva_variable.setColumna(columna.get(contador));
                         if (!ambito_variable.equals("")) {
-                            nuevoMetodo.varLocales.put(nueva_variable.getId() + "_" + ambito_variable, nueva_variable);
+                            if(!nuevoMetodo.existeVar(nueva_variable.getId()) && !nuevoMetodo.existePar(nueva_variable.getId())){
+                                nuevoMetodo.varLocales.put(nueva_variable.getId(), nueva_variable);
+                            } else {
+                                //ERROR YA EXISTE
+                            }
                         } else {
                             nueva_variable.setAmbito("global");
-                            clase.varGlobales.put(nueva_variable.getId() + "_global", nueva_variable);
+                            if (!clase.existeVar(nueva_variable.getId())) {
+                                clase.varGlobales.put(nueva_variable.getId(), nueva_variable);
+                            } else {
+                                //ERROR YA EXISTE
+                            }
                         }
                         break;
                     case "caracter":
@@ -280,10 +353,18 @@ public class RecorridoAST {
                         nueva_variable.setLinea(linea.get(contador));
                         nueva_variable.setColumna(columna.get(contador));
                         if (!ambito_variable.equals("")) {
-                            nuevoMetodo.varLocales.put(nueva_variable.getId() + "_" + ambito_variable, nueva_variable);
+                            if(!nuevoMetodo.existeVar(nueva_variable.getId()) && !nuevoMetodo.existePar(nueva_variable.getId())){
+                                nuevoMetodo.varLocales.put(nueva_variable.getId(), nueva_variable);
+                            } else {
+                                //ERROR YA EXISTE
+                            }
                         } else {
                             nueva_variable.setAmbito("global");
-                            clase.varGlobales.put(nueva_variable.getId() + "_global", nueva_variable);
+                            if (!clase.existeVar(nueva_variable.getId())) {
+                                clase.varGlobales.put(nueva_variable.getId(), nueva_variable);
+                            } else {
+                                //ERROR YA EXISTE
+                            }
                         }
                         break;
                     case "bool":
@@ -293,10 +374,18 @@ public class RecorridoAST {
                         nueva_variable.setLinea(linea.get(contador));
                         nueva_variable.setColumna(columna.get(contador));
                         if (!ambito_variable.equals("")) {
-                            nuevoMetodo.varLocales.put(nueva_variable.getId() + "_" + ambito_variable, nueva_variable);
+                            if(!nuevoMetodo.existeVar(nueva_variable.getId()) && !nuevoMetodo.existePar(nueva_variable.getId())){
+                                nuevoMetodo.varLocales.put(nueva_variable.getId(), nueva_variable);
+                            } else {
+                                //ERROR YA EXISTE
+                            }
                         } else {
                             nueva_variable.setAmbito("global");
-                            clase.varGlobales.put(nueva_variable.getId() + "_global", nueva_variable);
+                            if (!clase.existeVar(nueva_variable.getId())) {
+                                clase.varGlobales.put(nueva_variable.getId(), nueva_variable);
+                            } else {
+                                //ERROR YA EXISTE
+                            }
                         }
                         break;
                     case "decimal":
@@ -306,10 +395,18 @@ public class RecorridoAST {
                         nueva_variable.setLinea(linea.get(contador));
                         nueva_variable.setColumna(columna.get(contador));
                         if (!ambito_variable.equals("")) {
-                            nuevoMetodo.varLocales.put(nueva_variable.getId() + "_" + ambito_variable, nueva_variable);
+                            if(!nuevoMetodo.existeVar(nueva_variable.getId()) && !nuevoMetodo.existePar(nueva_variable.getId())){
+                                nuevoMetodo.varLocales.put(nueva_variable.getId(), nueva_variable);
+                            } else {
+                                //ERROR YA EXISTE
+                            }
                         } else {
                             nueva_variable.setAmbito("global");
-                            clase.varGlobales.put(nueva_variable.getId() + "_global", nueva_variable);
+                            if (!clase.existeVar(nueva_variable.getId())) {
+                                clase.varGlobales.put(nueva_variable.getId(), nueva_variable);
+                            } else {
+                                //ERROR YA EXISTE
+                            }
                         }
                         break;
                     default:
@@ -319,10 +416,18 @@ public class RecorridoAST {
                         nueva_variable.setLinea(linea.get(contador));
                         nueva_variable.setColumna(columna.get(contador));
                         if (!ambito_variable.equals("")) {
-                            nuevoMetodo.varLocales.put(nueva_variable.getId() + "_" + ambito_variable, nueva_variable);
+                            if(!nuevoMetodo.existeVar(nueva_variable.getId()) && !nuevoMetodo.existePar(nueva_variable.getId())){
+                                nuevoMetodo.varLocales.put(nueva_variable.getId(), nueva_variable);
+                            } else {
+                                //ERROR YA EXISTE
+                            }
                         } else {
                             nueva_variable.setAmbito("global");
-                            clase.varGlobales.put(nueva_variable.getId() + "_global", nueva_variable);
+                            if (!clase.existeVar(nueva_variable.getId())) {
+                                clase.varGlobales.put(nueva_variable.getId(), nueva_variable);
+                            } else {
+                                //ERROR YA EXISTE
+                            }
                         }
                         break;
                 }
@@ -342,10 +447,18 @@ public class RecorridoAST {
                     nueva_variable.setLinea(raiz.hijos.get(1).getLinea());
                     nueva_variable.setColumna(raiz.hijos.get(1).getColumna());
                     if (!ambito_variable.equals("")) {
-                        nuevoMetodo.varLocales.put(nueva_variable.getId() + "_" + ambito_variable, nueva_variable);
+                        if(!nuevoMetodo.existeVar(nueva_variable.getId()) && !nuevoMetodo.existePar(nueva_variable.getId())){
+                            nuevoMetodo.varLocales.put(nueva_variable.getId(), nueva_variable);
+                        } else {
+                            //ERROR YA EXISTE
+                        }
                     } else {
                         nueva_variable.setAmbito("global");
-                        clase.varGlobales.put(nueva_variable.getId() + "_global", nueva_variable);
+                        if (!clase.existeVar(nueva_variable.getId())) {
+                            clase.varGlobales.put(nueva_variable.getId(), nueva_variable);
+                        } else {
+                            //ERROR YA EXISTE
+                        }
                     }
                     break;
                 case "cadena":
@@ -355,10 +468,18 @@ public class RecorridoAST {
                     nueva_variable.setLinea(raiz.hijos.get(1).getLinea());
                     nueva_variable.setColumna(raiz.hijos.get(1).getColumna());
                     if (!ambito_variable.equals("")) {
-                        nuevoMetodo.varLocales.put(nueva_variable.getId() + "_" + ambito_variable, nueva_variable);
+                        if(!nuevoMetodo.existeVar(nueva_variable.getId()) && !nuevoMetodo.existePar(nueva_variable.getId())){
+                            nuevoMetodo.varLocales.put(nueva_variable.getId(), nueva_variable);
+                        } else {
+                            //ERROR YA EXISTE
+                        }
                     } else {
                         nueva_variable.setAmbito("global");
-                        clase.varGlobales.put(nueva_variable.getId() + "_global", nueva_variable);
+                        if (!clase.existeVar(nueva_variable.getId())) {
+                            clase.varGlobales.put(nueva_variable.getId(), nueva_variable);
+                        } else {
+                            //ERROR YA EXISTE
+                        }
                     }
                     break;
                 case "caracter":
@@ -366,10 +487,18 @@ public class RecorridoAST {
                     nueva_variable.setVisibilidad(raiz.hijos.get(2).valor);
                     nueva_variable.setRol("var");
                     if (!ambito_variable.equals("")) {
-                        nuevoMetodo.varLocales.put(nueva_variable.getId() + "_" + ambito_variable, nueva_variable);
+                        if(!nuevoMetodo.existeVar(nueva_variable.getId()) && !nuevoMetodo.existePar(nueva_variable.getId())){
+                            nuevoMetodo.varLocales.put(nueva_variable.getId(), nueva_variable);
+                        } else {
+                            //ERROR YA EXISTE
+                        }
                     } else {
                         nueva_variable.setAmbito("global");
-                        clase.varGlobales.put(nueva_variable.getId() + "_global", nueva_variable);
+                        if (!clase.existeVar(nueva_variable.getId())) {
+                            clase.varGlobales.put(nueva_variable.getId(), nueva_variable);
+                        } else {
+                            //ERROR YA EXISTE
+                        }
                     }
                     break;
                 case "bool":
@@ -377,10 +506,18 @@ public class RecorridoAST {
                     nueva_variable.setVisibilidad(raiz.hijos.get(2).valor);
                     nueva_variable.setRol("var");
                     if (!ambito_variable.equals("")) {
-                        nuevoMetodo.varLocales.put(nueva_variable.getId() + "_" + ambito_variable, nueva_variable);
+                        if(!nuevoMetodo.existeVar(nueva_variable.getId()) && !nuevoMetodo.existePar(nueva_variable.getId())){
+                            nuevoMetodo.varLocales.put(nueva_variable.getId(), nueva_variable);
+                        } else {
+                            //ERROR YA EXISTE
+                        }
                     } else {
                         nueva_variable.setAmbito("global");
-                        clase.varGlobales.put(nueva_variable.getId() + "_global", nueva_variable);
+                        if (!clase.existeVar(nueva_variable.getId())) {
+                            clase.varGlobales.put(nueva_variable.getId(), nueva_variable);
+                        } else {
+                            //ERROR YA EXISTE
+                        }
                     }
                     break;
                 case "decimal":
@@ -388,10 +525,18 @@ public class RecorridoAST {
                     nueva_variable.setVisibilidad(raiz.hijos.get(2).valor);
                     nueva_variable.setRol("var");
                     if (!ambito_variable.equals("")) {
-                        nuevoMetodo.varLocales.put(nueva_variable.getId() + "_" + ambito_variable, nueva_variable);
+                        if(!nuevoMetodo.existeVar(nueva_variable.getId()) && !nuevoMetodo.existePar(nueva_variable.getId())){
+                            nuevoMetodo.varLocales.put(nueva_variable.getId(), nueva_variable);
+                        } else {
+                            //ERROR YA EXISTE
+                        }
                     } else {
                         nueva_variable.setAmbito("global");
-                        clase.varGlobales.put(nueva_variable.getId() + "_global", nueva_variable);
+                        if (!clase.existeVar(nueva_variable.getId())) {
+                            clase.varGlobales.put(nueva_variable.getId(), nueva_variable);
+                        } else {
+                            //ERROR YA EXISTE
+                        }
                     }
                     break;
                 default:
@@ -401,10 +546,18 @@ public class RecorridoAST {
                     nueva_variable.setLinea(raiz.hijos.get(1).getLinea());
                     nueva_variable.setColumna(raiz.hijos.get(1).getColumna());
                     if (!ambito_variable.equals("")) {
-                        nuevoMetodo.varLocales.put(nueva_variable.getId() + "_" + ambito_variable, nueva_variable);
+                        if(!nuevoMetodo.existeVar(nueva_variable.getId()) && !nuevoMetodo.existePar(nueva_variable.getId())){
+                            nuevoMetodo.varLocales.put(nueva_variable.getId(), nueva_variable);
+                        } else {
+                            //ERROR YA EXISTE
+                        }
                     } else {
                         nueva_variable.setAmbito("global");
-                        clase.varGlobales.put(nueva_variable.getId() + "_global", nueva_variable);
+                        if (!clase.existeVar(nueva_variable.getId())) {
+                            clase.varGlobales.put(nueva_variable.getId(), nueva_variable);
+                        } else {
+                            //ERROR YA EXISTE
+                        }
                     }
                     break;
             }
@@ -424,10 +577,18 @@ public class RecorridoAST {
             nueva_variable.setAmbito(ambito_variable);
             nueva_variable.setN_dimensiones(raiz.hijos.get(2).hijos.size());
             if (!ambito_variable.equals("")) {
-                nuevoMetodo.varLocales.put(nueva_variable.getId() + "_" + ambito_variable, nueva_variable);
+                if(!nuevoMetodo.existeVar(nueva_variable.getId()) && !nuevoMetodo.existePar(nueva_variable.getId())){
+                    nuevoMetodo.varLocales.put(nueva_variable.getId(), nueva_variable);
+                } else {
+                    //ERROR YA EXISTE
+                }
             } else {
                 nueva_variable.setAmbito("global");
-                clase.varGlobales.put(nueva_variable.getId() + "_global", nueva_variable);
+                if (!clase.existeVar(nueva_variable.getId())) {
+                    clase.varGlobales.put(nueva_variable.getId(), nueva_variable);
+                } else {
+                    //ERROR YA EXISTE
+                }
             }
         }
     }
@@ -444,10 +605,18 @@ public class RecorridoAST {
             nueva_variable.setAmbito(ambito_variable);
             nueva_variable.setVisibilidad(raiz.hijos.get(2).valor);
             if (!ambito_variable.equals("")) {
-                nuevoMetodo.varLocales.put(nueva_variable.getId() + "_" + ambito_variable, nueva_variable);
+                if(!nuevoMetodo.existeVar(nueva_variable.getId()) && !nuevoMetodo.existePar(nueva_variable.getId())){
+                    nuevoMetodo.varLocales.put(nueva_variable.getId(), nueva_variable);
+                } else {
+                    //ERROR YA EXISTE
+                }
             } else {
                 nueva_variable.setAmbito("global");
-                clase.varGlobales.put(nueva_variable.getId() + "_global", nueva_variable);
+                if (!clase.existeVar(nueva_variable.getId())) {
+                    clase.varGlobales.put(nueva_variable.getId(), nueva_variable);
+                } else {
+                    //ERROR YA EXISTE
+                }
             }
         }
     }
