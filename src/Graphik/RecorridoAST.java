@@ -575,6 +575,7 @@ public class RecorridoAST {
             nueva_variable.setRol("arr");
             nueva_variable.setVisibilidad(raiz.hijos.get(3).valor);
             nueva_variable.setAmbito(ambito_variable);
+            nueva_variable.setIsArreglo(true);
             nueva_variable.setN_dimensiones(raiz.hijos.get(2).hijos.size());
             if (!ambito_variable.equals("")) {
                 if(!nuevoMetodo.existeVar(nueva_variable.getId()) && !nuevoMetodo.existePar(nueva_variable.getId())){

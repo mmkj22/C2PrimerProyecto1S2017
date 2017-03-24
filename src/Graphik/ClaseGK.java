@@ -22,6 +22,7 @@ public class ClaseGK {
     public Map<String, SimboloGK> varGlobales;
     private List<ClaseGK> hereda;
     private List<String> llamadasHK;
+    private List<String> imports;
     private NodoGK nodo;
 
     public ClaseGK()
@@ -78,6 +79,15 @@ public class ClaseGK {
     public void setLlamadasHK(List<String> llamadasHK) {
         this.llamadasHK = llamadasHK;
     }
+
+    public List<String> getImports() {
+        return imports;
+    }
+
+    public void setImports(List<String> imports) {
+        this.imports = imports;
+    }
+    
 
     public Map<String, MetodoGK> getMetodos() {
         return metodos;

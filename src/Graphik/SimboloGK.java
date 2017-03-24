@@ -29,6 +29,7 @@ public class SimboloGK implements Cloneable {
     private String visibilidad;
     private String rol;
     private int key;
+    private boolean isarreglo=false;
     
     public SimboloGK()
     {
@@ -187,6 +188,15 @@ public class SimboloGK implements Cloneable {
     public void setKey(int key) {
         this.key = key;
     }
+
+    public boolean getIsArreglo() {
+        return isarreglo;
+    }
+
+    public void setIsArreglo(boolean isarreglo) {
+        this.isarreglo = isarreglo;
+    }
+    
     
     
 }

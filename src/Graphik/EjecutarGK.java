@@ -6,10 +6,15 @@
 package Graphik;
 
 
+import Logica.CargarCSV;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
+import java.util.Vector;
 import javax.swing.JTextArea;
 
 /**
@@ -28,6 +33,7 @@ public class EjecutarGK {
     private boolean vieneBreak=true;
     private boolean continuar = false;
     JTextArea txtResultados;
+    private boolean bandera = false;
     
     public EjecutarGK(NodoGK root, JTextArea txtResultados)
     {
@@ -59,7 +65,7 @@ public class EjecutarGK {
             if(clase.metodos.containsKey("Inicio"))
             {
                 MetodoGK principal = clase.metodos.get("Inicio");
-                this.ambito.push(TablaSimbolosGK.claseCompilar+"_Inicio");
+                this.ambito.push(TablaSimbolosGK.claseCompilar+"-Inicio");
                 System.out.println("Se encontro Principal");
                 this.recorrido((String)ambito.peek(), principal.getSentencias());
             }
@@ -77,7 +83,7 @@ public class EjecutarGK {
     private void asignacionGlobales(Map<String, SimboloGK> globales, NodoGK nodo)
     {
         String nombre, nombreReg, tipo, val;
-        
+        Resultado aux1, aux2;
         for(NodoGK n: nodo.hijos)
         {
             nombre=nombreReg=tipo=val="";
@@ -86,8 +92,17 @@ public class EjecutarGK {
                 if(n.valor.equals("DECLARA_ASIG_VAR"))
                 {
                     System.out.println("Globales: DECLARA_ASIG_VAR");
-                    Resultado res = this.evaluarExpresion(claseActual, n.hijos.get(3));
-                    System.out.println(res.tipogk);
+                    aux1 = this.evaluarExpresion(claseActual, n.hijos.get(3));
+                    tipo=n.hijos.get(0).valor;
+                    aux2=this.evaluarAsignacion(tipo, aux1);
+                    if(aux2==null)
+                    {
+                        return;
+                    }
+                    if(!this.modificarValorGlobales(claseActual, n.hijos.get(1), aux2))
+                    {
+                        return;
+                    }
                 }
                 else if(n.valor.equals("DECLARA_ASIG_ARR"))
                 {
@@ -100,6 +115,25 @@ public class EjecutarGK {
             }
         }
     }
+    
+    private boolean modificarValorGlobales(String ambito, NodoGK variable, Resultado val)
+    {
+        SimboloGK aux1=null;
+        String[] ubicacion = ambito.split("-");
+        ClaseGK clase = EjecutarGK.listaClases.get(ubicacion[0]);
+        if(clase==null)
+        {
+            return false;
+        }
+        if(clase.varGlobales.containsKey(variable.valor))
+        {
+            aux1=clase.varGlobales.get(variable.valor);
+            aux1.setValor(val);
+            return true;
+        }
+        return false;
+    }
+    
     
     private Resultado evaluarAsignacion(String tipo, Resultado valor)
     {
@@ -573,31 +607,41 @@ public class EjecutarGK {
             }
             else if(temp1.tipogk.equalsIgnoreCase("entero") && temp2.tipogk.equalsIgnoreCase("caracter"))
             {
-                double resultado = temp1.valgk/temp2.valChar;
+                double primero = (double) temp1.valgk;
+                double segundo = temp2.valChar*1;
+                double resultado = primero/segundo;
                 content = new Resultado("decimal", resultado);
                 return content;
             }
             else if(temp1.tipogk.equalsIgnoreCase("caracter") && temp2.tipogk.equalsIgnoreCase("entero"))
             {
-                double resultado = temp1.valChar / temp2.valgk;
+                double primero = temp1.valChar*1;
+                double segundo = (double) temp2.valgk;
+                double resultado = primero/segundo;
                 content = new Resultado("decimal", resultado);
                 return content;
             }
             else if(temp1.tipogk.equalsIgnoreCase("bool") && temp2.tipogk.equalsIgnoreCase("entero"))
             {
-                double resultado = temp1.valgk/temp2.valgk;
+                double primero = (double) temp1.valgk;
+                double segundo = (double) temp2.valgk;
+                double resultado = primero/segundo;
                 content = new Resultado("decimal", resultado);
                 return content;
             }
             else if(temp1.tipogk.equalsIgnoreCase("entero") && temp2.tipogk.equalsIgnoreCase("bool"))
             {
-                double resultado = temp1.valgk/temp2.valgk; 
+                double primero = (double) temp1.valgk;
+                double segundo = (double) temp2.valgk;
+                double resultado = primero/segundo;
                 content = new Resultado("decimal", resultado);
                 return content;
             }
             else if(temp1.tipogk.equalsIgnoreCase("entero") && temp2.tipogk.equalsIgnoreCase("entero"))
             {
-                double resultado = temp1.valgk/temp2.valgk;
+                double primero = (double) temp1.valgk;
+                double segundo = (double) temp2.valgk;
+                double resultado = primero/segundo;
                 content = new Resultado("decimal", resultado);
                 return content;
             }
@@ -609,7 +653,7 @@ public class EjecutarGK {
         else if(nodo.valor.equals("pot"))
         {
             temp1= this.evaluarExpresion(ambito, nodo.hijos.get(0));
-            temp2=this.evaluarExpresion(ambito, nodo.hijos.get(1));
+            temp2= this.evaluarExpresion(ambito, nodo.hijos.get(1));
             if(temp1==null || temp2==null)
             {
                 return null;
@@ -653,27 +697,32 @@ public class EjecutarGK {
             //RETORNA TIPO ENTERO
             else if(temp1.tipogk.equalsIgnoreCase("entero") && temp2.tipogk.equalsIgnoreCase("caracter"))
             {
-                content = new Resultado("entero", Math.pow(temp1.valgk, temp2.valgk));
+                int resultado = (int)Math.pow(temp1.valgk, temp2.valChar);
+                content = new Resultado("entero", resultado);
                 return content;
             }
             else if(temp1.tipogk.equalsIgnoreCase("caracter") && temp2.tipogk.equalsIgnoreCase("entero"))
             {
-                content = new Resultado("entero", Math.pow(temp1.valChar, temp2.valgk));
+                int resultado = (int)Math.pow(temp1.valChar, temp2.valgk);
+                content = new Resultado("entero", resultado);
                 return content;
             }
             else if(temp1.tipogk.equalsIgnoreCase("bool") && temp2.tipogk.equalsIgnoreCase("entero"))
             {
-                content = new Resultado("entero", Math.pow(temp1.valgk, temp2.valgk));
+                int resultado = (int) Math.pow(temp1.valgk, temp2.valgk);
+                content = new Resultado("entero", resultado);
                 return content;
             }
             else if(temp1.tipogk.equalsIgnoreCase("entero") && temp2.tipogk.equalsIgnoreCase("bool"))
             {
-                content = new Resultado("entero", Math.pow(temp1.valgk, temp2.valgk));
+                int resultado = (int) Math.pow(temp1.valgk, temp2.valgk);
+                content = new Resultado("entero", resultado);
                 return content;
             }
             else if(temp1.tipogk.equalsIgnoreCase("entero") && temp2.tipogk.equalsIgnoreCase("entero"))
             {
-                content = new Resultado("entero", Math.pow(temp1.valgk, temp2.valgk));
+                int resultado = (int) Math.pow(temp1.valgk, temp2.valgk);
+                content = new Resultado("entero", resultado);
                 return content;
             }
             else
@@ -688,24 +737,13 @@ public class EjecutarGK {
             {
                 return null;
             }
-            //RETORNA TIPO DECIMAL
-            if(temp1.tipogk.equalsIgnoreCase("entero"))
-            {
-            
-            }
-            //RETORNA TIPO ENTERO
-            else if(temp1.tipogk.equalsIgnoreCase("decimal"))
-            {
-            
-            }
-            else if(temp1.tipogk.equalsIgnoreCase("caracter"))
-            {
-            
-            }
-            else
+            temp2=this.evaluarAumento(ambito, temp1);
+            if(temp2==null)
             {
                 return null;
             }
+            content=temp2;
+            return content;
         }
         else if(nodo.valor.equals("decremento"))
         {
@@ -714,24 +752,13 @@ public class EjecutarGK {
             {
                 return null;
             }
-            //RETORNA TIPO DECIMAL
-            if(temp1.tipogk.equalsIgnoreCase("entero"))
-            {
-            
-            }
-            //RETORNA TIPO ENTERO
-            else if(temp1.tipogk.equalsIgnoreCase("decimal"))
-            {
-            
-            }
-            else if(temp1.tipogk.equalsIgnoreCase("caracter"))
-            {
-            
-            }
-            else
+            temp2=this.evaluarDecremento(ambito, temp1);
+            if(temp2==null)
             {
                 return null;
             }
+            content=temp2;
+            return content;
         }
         else if(nodo.valor.equals("igualacion"))
         {
@@ -2387,7 +2414,7 @@ public class EjecutarGK {
         }
         else if(nodo.valor.equals("identificador"))
         {
-            simGeneral = this.existeVariable(ambito, nodo);
+            simGeneral = this.existeVariable(ambito, nodo.hijos.get(0));
             if(simGeneral==null)
             {
                 return null;
@@ -2398,10 +2425,6 @@ public class EjecutarGK {
                 return null;
             }
             return content;
-        }
-        else if(nodo.valor.equals("arreglo"))
-        {
-        
         }
         else if(nodo.valor.equals("decimal"))
         {
@@ -2435,6 +2458,14 @@ public class EjecutarGK {
             content = new Resultado("caracter", valor);
             return content; 
         }
+        else if(nodo.valor.equalsIgnoreCase("AccesoArreglo"))
+        {
+            
+        }
+        else if(nodo.valor.equalsIgnoreCase("ARREGLO"))
+        {
+            
+        }
         else if(nodo.valor.equals("LLAMAR_MET"))
         {
         
@@ -2446,6 +2477,16 @@ public class EjecutarGK {
         else if(nodo.valor.equals("ACCESOBJ"))
         {
         
+        }
+        else if(nodo.valor.equalsIgnoreCase("columna"))
+        {
+            temp1=this.evaluarExpresion(ambito, nodo.hijos.get(0));
+            if(temp1==null)
+            {
+                return null;
+            }
+            Vector algo = (Vector) CargarCSV.modelo.getDataVector().elementAt(1);
+            
         }
         else 
         {
@@ -2469,31 +2510,86 @@ public class EjecutarGK {
     private Resultado tipoIdentificador(SimboloGK var)
     {
         Resultado content;
+        Resultado result;
+        ClaseGK clase;
+        String tipo;
         switch(var.getTipoVariable())
         {
             case "entero":
-                content = new Resultado(var.getTipoVariable(), (int)var.getValor());
+                tipo = var.getValor().getClass().getSimpleName();
+                if(tipo.equalsIgnoreCase("Integer"))
+                {
+                    content = new Resultado(var.getTipoVariable(), (int)var.getValor());
+                }
+                else
+                {
+                    result = (Resultado)var.getValor();
+                    content = new Resultado(var.getTipoVariable(), result.valgk);
+                }
                 content.value="esId";
+                content.id_result=var.getId();
                 return content;
             case "decimal":
-                content = new Resultado(var.getTipoVariable(), (double)var.getValor());
+                tipo = var.getValor().getClass().getSimpleName();
+                if(tipo.equalsIgnoreCase("Double"))
+                {
+                    content = new Resultado(var.getTipoVariable(), var.getValor());
+                }
+                else
+                {
+                    result = (Resultado)var.getValor();
+                    content = new Resultado(var.getTipoVariable(), result.valDoble);
+                }
                 content.value="esId";
+                content.id_result=var.getId();
                 return content;
             case "bool":
-                content = new Resultado(var.getTipoVariable(), (boolean)var.getValor());
+                tipo = var.getValor().getClass().getSimpleName();
+                if(tipo.equalsIgnoreCase("Boolean"))
+                {
+                    content = new Resultado(var.getTipoVariable(), (boolean)var.getValor());
+                }
+                else
+                {
+                    result = (Resultado)var.getValor();
+                    content = new Resultado(var.getTipoVariable(), result.valBool);
+                }
                 content.value="esId";
+                content.id_result=var.getId();
                 return content;
             case "cadena":
-                content = new Resultado(var.getTipoVariable(), (String)var.getValor());
+                tipo = var.getValor().getClass().getSimpleName();
+                if(tipo.equalsIgnoreCase("String"))
+                {
+                    content = new Resultado(var.getTipoVariable(), (String)var.getValor());
+                }
+                else
+                {
+                    result = (Resultado)var.getValor();
+                    content = new Resultado(var.getTipoVariable(), result.valorgk);
+                }
                 content.value="esId";
+                content.id_result=var.getId();
                 return content;
             case "caracter":
-                content = new Resultado(var.getTipoVariable(), (char)var.getValor());
+                tipo = var.getValor().getClass().getSimpleName();
+                if(tipo.equalsIgnoreCase("Character"))
+                {
+                    content = new Resultado(var.getTipoVariable(), (char)var.getValor());
+                }
+                else
+                {
+                    result = (Resultado)var.getValor();
+                    content = new Resultado(var.getTipoVariable(), result.valChar);
+                }
                 content.value="esId";
+                content.id_result=var.getId();
                 return content;
             default:
+                clase = (ClaseGK)var.getValor();
                 content = new Resultado(var.getTipoVariable(), var.getValor());
                 content.value="esId";
+                content.id_result=var.getId();
                 return content;
         }
     }
@@ -2501,7 +2597,7 @@ public class EjecutarGK {
     private SimboloGK existeVariable(String ambito, NodoGK nodo)
     {
         SimboloGK aux1=null;
-        String[] ubicacion = ambito.split("_");
+        String[] ubicacion = ambito.split("-");
         ClaseGK clase = EjecutarGK.listaClases.get(ubicacion[0]);
         if(ubicacion.length>1)
         {
@@ -2518,9 +2614,9 @@ public class EjecutarGK {
     SimboloGK getIdsLocal(MetodoGK metodo, NodoGK nodo)
     {
         SimboloGK registro;
-        if(metodo.varLocales.containsKey(nodo.hijos.get(0).valor))
+        if(metodo.varLocales.containsKey(nodo.valor))
         {
-            registro=metodo.varLocales.get(nodo.hijos.get(0).valor);
+            registro=metodo.varLocales.get(nodo.valor);
             if(registro!=null)
             {
                 return registro;
@@ -2532,9 +2628,9 @@ public class EjecutarGK {
     SimboloGK getIdsGlobal(ClaseGK clase, NodoGK nodo)
     {
         SimboloGK registro;
-        if(clase.varGlobales.containsKey(nodo.hijos.get(0).valor))
+        if(clase.varGlobales.containsKey(nodo.valor))
         {
-            registro=clase.varGlobales.get(nodo.hijos.get(0).valor);
+            registro=clase.varGlobales.get(nodo.valor);
             if(registro!=null)
             {
                 return registro;
@@ -2545,6 +2641,7 @@ public class EjecutarGK {
     
     private void recorrido(String ambito, NodoGK nodo)
     {
+        boolean bien; 
         Resultado aux2, aux3;
         SimboloGK aux1;
         MetodoGK metodo;
@@ -2556,9 +2653,36 @@ public class EjecutarGK {
                 {
                     if(romper==false || retorna==false)
                     {
-                        if(x.valor.equalsIgnoreCase("DECLARA_ASIG_VAR"))
+                        if(x.valor.equalsIgnoreCase("DECLARA_VAR"))
                         {
-                        
+                            if(bandera)
+                            {
+                            
+                            }
+                            else
+                            {
+                            
+                            }
+                        }
+                        else if(x.valor.equalsIgnoreCase("DECLARA_ARR"))
+                        {
+                            if(bandera)
+                            {
+                            
+                            }
+                            else
+                            {
+                            
+                            }
+                        }
+                        else if(x.valor.equalsIgnoreCase("DECLARA_ASIG_VAR"))
+                        {
+                            System.out.println("EJ: Entro a Declaracion y Asignacion de variable");
+                            bien = this.DeclaraAsignaVariable(ambito, x);
+                            if(!bien)
+                            {
+                                return;
+                            }
                         }
                         else if(x.valor.equalsIgnoreCase("DECLARA_ASIG_OBJ"))
                         {
@@ -2570,7 +2694,12 @@ public class EjecutarGK {
                         }
                         else if(x.valor.equalsIgnoreCase("ASIGNACION"))
                         {
-                        
+                            System.out.println("EJ: Entro a Asignacion");
+                            bien=this.AsignaVariable(ambito, x);
+                            if(!bien)
+                            {
+                                return;
+                            }
                         }
                         else if(x.valor.equalsIgnoreCase("ASIG_OBJ"))
                         {
@@ -2596,11 +2725,13 @@ public class EjecutarGK {
                         }
                         else if(x.valor.equalsIgnoreCase("SELECCIONA"))
                         {
-                        
+                            System.out.println("EJ: Entro a Selecciona");
+                            this.hacerSwitch(ambito, x);
                         }
                         else if(x.valor.equalsIgnoreCase("PARA"))
                         {
-                        
+                            System.out.println("EJ: Entro a Para");
+                            this.hacerPara(ambito, x);
                         }
                         else if(x.valor.equalsIgnoreCase("MIENTRAS"))
                         {
@@ -2637,7 +2768,7 @@ public class EjecutarGK {
                         }
                         else if(x.valor.equalsIgnoreCase("LLAMAR_MET"))
                         {
-                        
+                            this.hacerLlamada(x, ambito);
                         }
                         else if(x.valor.equalsIgnoreCase("LLAMARHK"))
                         {
@@ -2658,7 +2789,21 @@ public class EjecutarGK {
                         }
                         else if(x.valor.equalsIgnoreCase("PROCESAR"))
                         {
-                        
+                            System.out.println("EJ: Entro a Procesar");
+                            if(x.hijos.get(1).valor.equalsIgnoreCase("DONDE"))
+                            {
+                                //PRIMERO VOY A TRAER LA FILA DEL FILTRO
+                                System.out.println("EJ: Entro a Donde");
+                                
+                            }
+                            else if(x.hijos.get(1).valor.equalsIgnoreCase("DONDECADA"))
+                            {
+                                System.out.println("EJ: Entro a DondeCada");
+                            }
+                            else if(x.hijos.get(1).valor.equalsIgnoreCase("DONDETODO"))
+                            {
+                                System.out.println("EJ: Entro a DondeTodo");
+                            }
                         }
                         else if(x.valor.equalsIgnoreCase("LLAMADA_HK_DATOS"))
                         {
@@ -2668,31 +2813,203 @@ public class EjecutarGK {
                         {
                         
                         }
-                        else if(x.valor.equalsIgnoreCase("DONDE"))
-                        {
-                        
-                        }
-                        else if(x.valor.equalsIgnoreCase("DONDECADA"))
-                        {
-                        
-                        }
-                        else if(x.valor.equalsIgnoreCase("DONDETODO"))
-                        {
-                        
-                        }
                         else if(x.valor.equalsIgnoreCase("aumento"))
                         {
-                        
+                            System.out.println("EJ: Entro a aumento");
+                            aux3=this.evaluarExpresion(ambito, x.hijos.get(0));
+                            if(aux3==null)
+                            {
+                                return; 
+                            }
+                            aux2=this.evaluarAumento(ambito, aux3);
+                            if(aux2==null)
+                            {
+                                return;
+                            }
                         }
                         else if(x.valor.equalsIgnoreCase("decremento"))
                         {
-                        
+                            System.out.println("EJ: Entro a decremento");
+                            aux3=this.evaluarExpresion(ambito, x.hijos.get(0));
+                            if(aux3==null)
+                            {
+                                return; 
+                            }
+                            aux2=this.evaluarDecremento(ambito, aux3);
+                            if(aux2==null)
+                            {
+                                return;
+                            }
                         }
                     }
                 }
             }
         }
     }
+    
+    
+    private Resultado evaluarAumento(String ambito, Resultado valor)
+    {
+        SimboloGK simGeneral;
+        Resultado content, variable;
+        if(valor.value==null)
+        {
+            switch(valor.tipogk)
+            {
+                case "entero":
+                    content=new Resultado("entero", valor.valgk+1);
+                    return content;
+                case "decimal":
+                    content=new Resultado("decimal", valor.valDoble+1);
+                    return content;
+                case "caracter":
+                    int val = valor.valChar*1;
+                    val++;
+                    content= new Resultado("caracter", (char)val);
+                    return content;
+
+                default:
+                    //Error
+                    break;
+            }
+        }
+        else if(valor.value.toString().equalsIgnoreCase("esId") && !valor.id_result.isEmpty())
+        {
+            NodoGK nodo = new NodoGK(valor.id_result);
+            simGeneral = this.existeVariable(ambito, nodo);
+            if(simGeneral==null)
+            {
+                return null;
+            }
+            variable = this.tipoIdentificador(simGeneral);
+            switch(variable.tipogk)
+            {
+                case "entero":
+                    int resint = valor.valgk+1;
+                    content=new Resultado("entero", resint);
+                    simGeneral.setValor(content);
+                    return content;
+                case "decimal":
+                    double resdouble = valor.valDoble+1;
+                    content=new Resultado("decimal", resdouble);
+                    simGeneral.setValor(content);
+                    return content;
+                case "caracter":
+                    int val = valor.valChar*1;
+                    val++;
+                    content= new Resultado("caracter", (char)val);
+                    simGeneral.setValor(content);
+                    return content;
+
+                default:
+                    return null;
+            }
+        }
+        else
+        {
+            switch(valor.tipogk)
+            {
+                case "entero":
+                    content=new Resultado("entero", valor.valgk+1);
+                    return content;
+                case "decimal":
+                    content=new Resultado("decimal", valor.valDoble+1);
+                    return content;
+                case "caracter":
+                    int val = valor.valChar*1;
+                    val++;
+                    content= new Resultado("caracter", (char)val);
+                    return content;
+
+                default:
+                    //Error
+                    break;
+            }
+        }
+        return null;
+    }
+    
+    private Resultado evaluarDecremento(String ambito, Resultado valor)
+    {
+        SimboloGK simGeneral;
+        Resultado content, variable;
+        if(valor.value==null)
+        {
+            switch(valor.tipogk)
+            {
+                case "entero":
+                    content=new Resultado("entero", valor.valgk-1);
+                    return content;
+                case "decimal":
+                    content=new Resultado("decimal", valor.valDoble-1);
+                    return content;
+                case "caracter":
+                    int val = valor.valChar*1;
+                    val--;
+                    content= new Resultado("caracter", (char)val);
+                    return content;
+
+                default:
+                    //Error
+                    break;
+            }
+        }
+        else if(valor.value.toString().equalsIgnoreCase("esId") && !valor.id_result.isEmpty())
+        {
+            NodoGK nodo = new NodoGK(valor.id_result);
+            simGeneral = this.existeVariable(ambito, nodo);
+            if(simGeneral==null)
+            {
+                return null;
+            }
+            variable = this.tipoIdentificador(simGeneral);
+            switch(variable.tipogk)
+            {
+                case "entero":
+                    int resint = valor.valgk-1;
+                    content=new Resultado("entero", resint);
+                    simGeneral.setValor(content);
+                    return content;
+                case "decimal":
+                    double resdouble = valor.valDoble-1;
+                    content=new Resultado("decimal", resdouble);
+                    simGeneral.setValor(content);
+                    return content;
+                case "caracter":
+                    int val = valor.valChar*1;
+                    val--;
+                    content= new Resultado("caracter", (char)val);
+                    simGeneral.setValor(content);
+                    return content;
+
+                default:
+                    return null;
+            }
+        }
+        else
+        {
+            switch(valor.tipogk)
+            {
+                case "entero":
+                    content=new Resultado("entero", valor.valgk-1);
+                    return content;
+                case "decimal":
+                    content=new Resultado("decimal", valor.valDoble-1);
+                    return content;
+                case "caracter":
+                    int val = valor.valChar*1;
+                    val--;
+                    content= new Resultado("caracter", (char)val);
+                    return content;
+
+                default:
+                    //Error
+                    break;
+            }
+        }
+        return null;
+    }
+
     
     private void imprimirPantalla(String ambito, NodoGK nodo)
     {
@@ -2721,6 +3038,7 @@ public class EjecutarGK {
             //ERROR DE TIPO BOOL
             return;
         }
+        bandera=true;
         if(aux3.tipogk.equalsIgnoreCase("bool") && aux3.valBool)
         {
             this.recorrido(ambito, nodo.hijos.get(1));
@@ -2735,6 +3053,7 @@ public class EjecutarGK {
         {
             return;
         }
+        bandera=true;
         if(aux3.tipogk.equalsIgnoreCase("bool") && aux3.valBool)
         {
             this.recorrido(ambito, nodo.hijos.get(0).hijos.get(1));
@@ -2749,6 +3068,7 @@ public class EjecutarGK {
     {
         if(nodo!=null)
         {
+            bandera=true;
             while(this.evaluarExpresion(ambito, nodo.hijos.get(0)).valBool)
             {
                 this.recorrido(ambito, nodo.hijos.get(1));
@@ -2773,6 +3093,7 @@ public class EjecutarGK {
     {
         if(nodo!=null)
         {
+            bandera=true;
             do
             {
                 this.recorrido(ambito, nodo.hijos.get(1));
@@ -2788,5 +3109,376 @@ public class EjecutarGK {
                     }
             }while(this.evaluarExpresion(ambito, nodo.hijos.get(0)).valBool);
         }
+    }
+    
+    private void hacerSwitch(String ambito, NodoGK nodo)
+    {
+        Resultado aux1, aux2;
+        boolean alguno = false;
+        aux1 = this.evaluarExpresion(ambito, nodo.hijos.get(0));
+        if(aux1==null)
+        {
+        
+        }
+        for(int i=0; i<nodo.hijos.get(1).hijos.size(); i++)
+        {
+            if(nodo.hijos.get(1).hijos.get(i).valor.equals("CASE")){
+                aux2 = this.evaluarExpresion(ambito, nodo.hijos.get(1).hijos.get(i).hijos.get(0));
+                if(aux2.tipogk.equalsIgnoreCase(aux1.tipogk))
+                {
+                    if(aux1.tipogk.equalsIgnoreCase("entero"))
+                    {
+                        if(aux1.valgk==aux2.valgk)
+                        {
+                            alguno=true;
+                            this.recorrido(ambito, nodo.hijos.get(1).hijos.get(i).hijos.get(1));
+                            if (romper)
+                            {
+                                romper = false;
+                                break;
+                            }
+
+                        }
+                    }
+                    else if(aux1.tipogk.equalsIgnoreCase("decimal"))
+                    {
+                        if(aux1.valDoble==aux2.valDoble)
+                        {
+                            alguno=true;
+                            this.recorrido(ambito, nodo.hijos.get(1).hijos.get(i).hijos.get(1));
+                            if (romper)
+                            {
+                                romper = false;
+                                break;
+                            }
+
+                        }
+                    }
+                    else if(aux1.tipogk.equalsIgnoreCase("caracter"))
+                    {
+                        if(aux1.valChar==aux2.valChar)
+                        {
+                            alguno=true;
+                            this.recorrido(ambito, nodo.hijos.get(1).hijos.get(i).hijos.get(1));
+                            if (romper)
+                            {
+                                romper = false;
+                                break;
+                            }
+                            break;
+                        }
+                    }
+                    else if(aux1.tipogk.equalsIgnoreCase("cadena"))
+                    {
+                        if(aux1.valorgk.equals(aux2.valorgk))
+                        {
+                            alguno=true;
+                            this.recorrido(ambito, nodo.hijos.get(1).hijos.get(i).hijos.get(1));
+                            if (romper)
+                            {
+                                romper = false;
+                                break;
+                            }
+
+                        }
+                    }
+                    else if(aux1.tipogk.equalsIgnoreCase("bool"))
+                    {
+                        if(aux1.valBool==aux2.valBool)
+                        {
+                            alguno=true;
+                            this.recorrido(ambito, nodo.hijos.get(1).hijos.get(i).hijos.get(1));
+                            if (romper)
+                            {
+                                romper = false;
+                                break;
+                            }
+
+                        }
+                    }
+                }
+                else if(alguno==true)
+                {
+                    this.recorrido(ambito, nodo.hijos.get(1).hijos.get(i).hijos.get(1));
+                    if(romper)
+                    {
+                        romper = false;
+                        break;
+                    }
+                }
+            }
+        }
+        if(!alguno)
+        {
+            for(int i=0; i<nodo.hijos.get(1).hijos.size(); i++)
+            {
+                if(nodo.hijos.get(1).hijos.get(i).valor.equals("DEFECTO")){
+                    this.recorrido(ambito, nodo.hijos.get(1).hijos.get(i).hijos.get(0));
+                    if(romper)
+                    {
+                        romper = false;
+                        break;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    
+    private void hacerPara(String ambito, NodoGK nodo)
+    {
+        Resultado aux1, aux2;
+        boolean bien;
+        bien = this.DeclaraAsignaPara(ambito, nodo.hijos.get(0));
+        if(!bien)
+        {
+            return;
+        }
+        aux1 = this.evaluarExpresion(ambito, nodo.hijos.get(1));
+        if(aux1==null || !aux1.tipogk.equalsIgnoreCase("bool"))
+        {
+            return;
+        }
+        while(aux1.valBool)
+        {
+            this.recorrido(ambito, nodo.hijos.get(3));
+            if(romper)
+            {
+                romper=false;
+                if(continuar)
+                {
+                    continuar=false;
+                    bien = operacionPara(ambito, nodo.hijos.get(2));
+                    if(!bien)
+                    {
+                        return;
+                    }
+                    aux1=this.evaluarExpresion(ambito, nodo.hijos.get(1));
+                    if(aux1==null || aux1.tipogk.equalsIgnoreCase("bool"))
+                    {
+                        return;
+                    }
+                    continue;
+                }
+                else
+                {
+                    break;
+                }
+            }
+            bien = operacionPara(ambito, nodo.hijos.get(2));
+            if(!bien)
+            {
+                return;
+            }
+            aux1=this.evaluarExpresion(ambito, nodo.hijos.get(1));
+            if(aux1==null || !aux1.tipogk.equalsIgnoreCase("bool"))
+            {
+                return;
+            }
+        }
+    }
+    
+    private boolean DeclaraAsignaPara(String ambito, NodoGK nodo)
+    {
+        Resultado aux2, aux3;
+        SimboloGK aux1;
+        boolean bien = false;
+        if(nodo.valor.equalsIgnoreCase("ASIGNACION"))
+        {
+            //CUANDO SOLO VIENE ASIGNACION
+        }
+        else
+        {
+            //CUANDO VIENE DECLARACION Y ASIGNACION SE CREA TEMPORALMENTE
+            
+        }
+        return bien;
+    }
+    
+    private boolean operacionPara(String ambito, NodoGK nodo)
+    {
+        Resultado aux3;
+        boolean bien = false;
+        if(nodo.valor.equalsIgnoreCase("aumento") || nodo.valor.equals("decremento"))
+        {
+            //MANDO A LLAMAR A LA EXPRESION
+            aux3 = this.evaluarExpresion(ambito, nodo);
+            if(aux3==null)
+            {
+                return false;
+            }
+            return true;
+        }
+        else
+        {
+            //AQUI VIENE UNA ASIGNACION
+            
+            return bien;
+        }
+    }
+    
+    boolean DeclaraAsignaVariable(String ambito, NodoGK nodo)
+    {
+        Resultado aux2, aux3, aux4;
+        SimboloGK aux1;
+        boolean bien=false;
+        aux3=this.evaluarExpresion(ambito, nodo.hijos.get(3));
+        if(aux3==null)
+        {
+            return false;
+        }
+        aux1=this.existeVariable(ambito, nodo.hijos.get(1));
+        if(aux1==null)
+        {
+            return false;
+        }
+        aux4=this.tipoIdentificador(aux1);
+        if(aux4==null)
+        {
+            return false;
+        }
+        aux2=this.evaluarAsignacion(aux4.tipogk, aux3);
+        if(aux2==null)
+        {
+            return false;
+        }
+        bien=this.modificarValor(ambito, nodo.hijos.get(1), aux2);
+        if(!bien)
+        {
+            return false;
+        }
+        return bien;
+    }
+    
+    private boolean AsignaVariable(String ambito, NodoGK nodo)
+    {
+        Resultado aux2, aux3, aux4;
+        SimboloGK aux1;
+        boolean bien=false;
+        aux1=this.existeVariable(ambito, nodo.hijos.get(0));
+        if(aux1==null)
+        {
+            return false;
+        }
+        aux3=this.evaluarExpresion(ambito, nodo.hijos.get(1));
+        if(aux3==null)
+        {
+            return false;
+        }
+        aux4=this.tipoIdentificador(aux1);
+        if(aux4==null)
+        {
+            return false;
+        }
+        aux2=this.evaluarAsignacion(aux4.tipogk, aux3);
+        if(aux2==null)
+        {
+            return false;
+        }
+        bien=this.modificarValor(ambito, nodo.hijos.get(0),aux2);
+        if(!bien)
+        {
+            return false;
+        }
+        return bien;
+    }
+    
+    boolean modificarValor(String ambito, NodoGK nombre, Resultado val)
+    {
+        SimboloGK variable;
+        variable = this.existeVariable(ambito, nombre);
+        if(variable==null)
+        {
+            return false;
+        }
+        variable.setValor(val);
+        return true;
+    }
+    
+    public Resultado hacerLlamada(NodoGK algo, String ambito)
+    {
+        List<Resultado> parametros = new ArrayList();
+        String cadena = sacarParametros(ambito, parametros, algo);
+        String idmetodo=algo.hijos.get(0).valor;
+        if(!cadena.equals(""))
+        {
+            idmetodo+=cadena;
+        }
+        Resultado parametro = null;
+        MetodoGK metodo = existeMetodo(ambito, idmetodo);
+        if(metodo==null)
+        {
+            return null;
+        }
+        if(metodo.parametros.size()==parametros.size())
+        {
+            Set set = metodo.parametros.entrySet();
+            Iterator iterador = set.iterator();
+            while(iterador.hasNext())
+            {
+                Map.Entry<String, SimboloGK> entry = (Map.Entry<String, SimboloGK>)iterador.next();
+                SimboloGK s = entry.getValue();
+                parametro=parametros.get(s.getOrden()-1);
+                if(s.getTipoVariable().equalsIgnoreCase(parametro.tipogk))
+                {
+                    switch(parametro.tipogk)
+                    {
+                        case "entero":
+                            s.setValor(new Resultado("entero",parametro.valgk));
+                            break;
+                        case "doble":
+                            s.setValor(new Resultado("decimal",parametro.valDoble));
+                            break;
+                        case "cadena":
+                            s.setValor(new Resultado("cadena", parametro.valorgk));
+                            break;
+                        case "bool":
+                            s.setValor(new Resultado("bool",parametro.valBool));
+                            break;
+                        case "caracter":
+                            s.setValor(new Resultado("caracter",parametro.valChar));
+                            break;
+                        default:
+                            s.setValor(new Resultado (parametro.tipogk, parametro.value));
+                            break;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+    
+    
+    private MetodoGK existeMetodo(String ambito, String nombre)
+    {
+        MetodoGK metodo=null;
+        String[] ubicacion = ambito.split("-");
+        ClaseGK clase = EjecutarGK.listaClases.get(ubicacion[0]);
+        if(clase.metodos.containsKey(nombre))
+        {
+            metodo = clase.metodos.get(nombre);
+            return metodo;
+        }
+        return metodo;
+    }
+    
+    public String sacarParametros(String ambito, List<Resultado> list, NodoGK nodo)
+    {
+        String tipos="";
+        if(nodo!=null)
+        {
+            Resultado aux3;
+            for(int i=0; i<nodo.hijos.get(1).hijos.size(); i++)
+            {
+                aux3=this.evaluarExpresion(ambito, nodo.hijos.get(1).hijos.get(i));
+                if(aux3==null)
+                {
+                    return null;
+                }
+                tipos+="_"+aux3.tipogk;
+                list.add(aux3);
+            }
+        }
+        return tipos;
     }
 }

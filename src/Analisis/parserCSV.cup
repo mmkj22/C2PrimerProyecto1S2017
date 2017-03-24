@@ -1,0 +1,108 @@
+package Analisis;
+
+import java_cup.runtime.*;
+import java.io.*;
+import Graphik.*;
+import Errores.*;
+import Logica.*;
+
+parser code
+{:
+
+    private Errores err = Errores.getInstance();
+
+    public void syntax_error(Symbol token) {
+        err.nuevoErrorSintactico((token.left+1),(token.right+1), "Se esperaba "+token.value);
+        System.out.println("Error sintactico: linea "+ (token.left+1)+" columna: "+(token.right+1)+" Lexema: "+token.value);
+
+    }
+
+    public void unrecovered_syntax_error(Symbol s) throws java.lang.Exception{
+        err.nuevoErrorSintactico((s.left+1),(s.right+1), "Se esperaba "+s.value);
+        System.out.println("Error sintactico: linea "+ s.left+" columna: "+s.right+" Lexema: "+s.value);
+
+    }  
+
+:}
+
+action code
+{:
+    CargarCSV cargar = CargarCSV.getInstance();
+    int contColumna=0;
+    int contFila=0;
+    int contHeaders=0;
+    Object fila[];
+:}
+
+terminal String numero, texto, decimal;
+terminal String cor_izq, cor_der, llave_izq, llave_der, coma, salto, finCadena;
+
+
+non terminal Resultado DATO, EXP;
+non terminal String INICIO, LST_HEADER, LST_LISTAS, HEADER, LST_DATO;
+
+
+
+start with INICIO;
+
+INICIO ::= LST_HEADER finCadena LST_LISTAS finCadena;
+
+LST_HEADER ::= LST_HEADER coma HEADER:name
+                {:
+                    contHeaders++;
+                    name=name.replace("\"","");
+                    CargarCSV.modelo.addColumn(name);
+                :}
+              |HEADER:name
+                {:
+                    contHeaders++;
+                    name=name.replace("\"","");
+                    CargarCSV.modelo.addColumn(name);
+                :};
+
+HEADER ::= cor_izq texto:name cor_der
+                {:
+                    RESULT = name;
+                :};
+
+LST_LISTAS::= LST_LISTAS finCadena LST_DATO
+                {:
+                    CargarCSV.modelo.addRow(fila);
+                :}
+            | LST_DATO
+                {:
+                    CargarCSV.modelo.addRow(fila);
+                :};
+                
+
+
+LST_DATO ::= LST_DATO coma DATO:da
+                {:
+                    fila[contFila] = da;
+                    contFila++;
+                :}
+            |DATO:da
+                {:
+                    contFila=0;
+                    fila = new Object[contHeaders];
+                    fila[contFila]=da;
+                    contFila++;
+                :};
+
+DATO ::= llave_izq EXP:ex llave_der {: RESULT = ex; :};
+
+EXP ::= texto:text
+            {:
+                text=text.replace("\"","");
+                RESULT = new Resultado("decimal", text);
+            :}
+      | numero:num
+            {:
+                int resultado = Integer.valueOf(num);
+                RESULT = new Resultado("entero", resultado);
+            :}
+      | decimal:dec
+            {:
+                double resultado = Double.valueOf(dec);
+                RESULT = new Resultado("decimal", resultado);
+            :};

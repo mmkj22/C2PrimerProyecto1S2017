@@ -26,12 +26,23 @@ import Haskell.*;
 import java.awt.Desktop;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.print.PrinterException;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
+import java.util.Vector;
+import org.fife.ui.rsyntaxtextarea.AbstractTokenMakerFactory;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rsyntaxtextarea.SyntaxScheme;
+import org.fife.ui.rsyntaxtextarea.Token;
+import org.fife.ui.rsyntaxtextarea.TokenMakerFactory;
+import org.fife.ui.rtextarea.RTextScrollPane;
+import org.jfree.ui.RefineryUtilities;
 
 /**
  *
@@ -53,7 +64,7 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
     JSplitPane splitPane;
     JScrollPane scroll;
     String comandoAnt="";
-    
+    private RSyntaxTextArea rsta;
     
     /**
      * Creates new form Principal
@@ -62,28 +73,19 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
     public Principal() {
         initComponents();
         masComponentes();
+        configurarEditor();
         componentesAuxiliares();
         crearPorcentaje();
-        //System.out.println(Fibonacci(5));
     }
    
-//    int Fibonacci (int n)
-//    {
-//        if(n==0||n==1)
-//        {
-//            return 1;
-//        }
-//        else
-//        {
-//            return Fibonacci(n-1)+Fibonacci(n-2);
-//        }
-//    }
+
     
     @Override
     public Image getIconImage() {
         Image retValue = Toolkit.getDefaultToolkit().
         getImage(ClassLoader.getSystemResource("Image/otroIcono.png"));
         return retValue;
+        
     }
     /**
      * This method is called from within the constructor to initialize the form.
@@ -109,6 +111,8 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
         jMenu1 = new javax.swing.JMenu();
         btnEjecutar = new javax.swing.JMenuItem();
         mnuCompilarGK = new javax.swing.JMenuItem();
+        mnuCargarDatos = new javax.swing.JMenuItem();
+        mnuGrafica = new javax.swing.JMenuItem();
         jMenu2 = new javax.swing.JMenu();
         mnuLogin = new javax.swing.JMenuItem();
         mnuLogout = new javax.swing.JMenuItem();
@@ -216,6 +220,22 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
         });
         jMenu1.add(mnuCompilarGK);
 
+        mnuCargarDatos.setText("Cargar Datos");
+        mnuCargarDatos.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                mnuCargarDatosActionPerformed(evt);
+            }
+        });
+        jMenu1.add(mnuCargarDatos);
+
+        mnuGrafica.setText("Ver grafica");
+        mnuGrafica.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                mnuGraficaActionPerformed(evt);
+            }
+        });
+        jMenu1.add(mnuGrafica);
+
         jMenuBar1.add(jMenu1);
 
         jMenu2.setText("Usuario");
@@ -305,11 +325,75 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
         abrirErrorGraphik();        // TODO add your handling code here:
     }//GEN-LAST:event_mnuErrorGraphikActionPerformed
 
+    private void mnuCargarDatosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mnuCargarDatosActionPerformed
+        try {
+            CargarDatos cargar = CargarDatos.getInstance();
+            CargarDatos.ruta="C:\\Users\\Kristhal\\Documents\\Proyecto1";
+            cargar.Donde();
+            // TODO add your handling code here:
+        } catch (Exception ex) {
+            Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
+        }
+//        CargarCSV.resetInstance();
+//        String cadena = this.parsearCSV();
+//        System.out.println(cadena);
+//        this.ejecutarCSV(cadena);
+//        CargarCSV cargar = CargarCSV.getInstance();
+//        try {
+//            cargar.printTable();
+//        } catch (PrinterException ex) {
+//            Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+    }//GEN-LAST:event_mnuCargarDatosActionPerformed
+
+    private void mnuGraficaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mnuGraficaActionPerformed
+        Graficar grafica = Graficar.getInstance();
+        List<Resultado> prueba = new ArrayList();
+        for(int i=-8; i<8; i++)
+        {
+            Resultado res = new Resultado("entero", i);
+            prueba.add(res);
+            
+        }
+        List<Resultado> otra = new ArrayList();
+        for(int i=-8; i<8; i++)
+        {
+            Resultado res = new Resultado("entero", i*i);
+            otra.add(res);
+        }
+        grafica.addSerie(prueba, otra);
+        grafica.personalizarGrafica();
+        grafica.mostrarGrafica();
+        grafica.pack();
+        RefineryUtilities.centerFrameOnScreen(grafica);// TODO add your handling code here:
+        grafica.setVisible(true);
+    }//GEN-LAST:event_mnuGraficaActionPerformed
+
     private void crear()
     {
         Tabs tab = new Tabs();
         contTabs++;
         TabControl.addTab("New "+contTabs, null, tab);
+    }
+    
+    
+    public void ejecutarCSV(String cadena)
+    {
+        if(!cadena.equals("")){
+            try { 
+                txtConsola.setText(cadena);
+                String input=cadena;
+//                Reader reader = new StringReader(input);
+//                Analisis.lexicoCSV scan = new Analisis.lexicoCSV(reader);
+//                Analisis.sintacticoCSV pars = new Analisis.sintacticoCSV(scan);
+                Analisis.lexicoCSV scan = new Analisis.lexicoCSV(new java.io.BufferedReader(new java.io.StringReader(input)));
+                new Analisis.sintacticoCSV(scan).parse();
+                
+            } catch (Exception ex) {
+                Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
+                Errores.getInstance().nuevoError(ex.getMessage());
+            }
+        }
     }
     
     public void ejecutarHK()
@@ -438,6 +522,7 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JMenuItem mnuAbrir;
     private javax.swing.JMenu mnuArchivo;
+    private javax.swing.JMenuItem mnuCargarDatos;
     private javax.swing.JMenuItem mnuCerrarP;
     private javax.swing.JMenuItem mnuCompilarGK;
     private javax.swing.JMenuItem mnuCrear;
@@ -446,6 +531,7 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
     private javax.swing.JMenuItem mnuErrorHaskell;
     private javax.swing.JMenu mnuErrores;
     private javax.swing.JMenuItem mnuExportarProyecto;
+    private javax.swing.JMenuItem mnuGrafica;
     private javax.swing.JMenuItem mnuGraphik;
     private javax.swing.JMenuItem mnuGuardar;
     private javax.swing.JMenuItem mnuGuardarComo;
@@ -869,5 +955,54 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
         tabla.declarar(registro);
         
     }
-            
+     
+        private String parsearCSV()
+    {
+        FileReader fr=null;
+        String cadena=""; 
+        try{    
+            File archivo = new File ("C:\\Users\\Kristhal\\Documents\\Proyecto1\\Prueba.csv");
+            fr = new FileReader (archivo);
+            BufferedReader br = new BufferedReader(fr);
+            String linea;
+            int contador = 0;
+            while((linea=br.readLine())!=null)
+            {
+                cadena+=linea+"%";
+            }
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }finally{
+            try{                    
+                if( null != fr ){   
+                   fr.close();     
+                }                  
+            }catch (Exception e2){ 
+                e2.printStackTrace();
+            }
+        }
+        return cadena;
+    }
+
+    private void configurarEditor() {
+        AbstractTokenMakerFactory atmf = (AbstractTokenMakerFactory) TokenMakerFactory.getDefaultInstance();
+        atmf.putMapping("text/Principal", "GUI.GraphikSyntax");
+        rsta = new RSyntaxTextArea(20, 60);
+        rsta.setSyntaxEditingStyle("text/Principal");
+        rsta.setCodeFoldingEnabled(true);
+        rsta.setCurrentLineHighlightColor(new Color(227, 242, 253, 200));
+        rsta.setFadeCurrentLineHighlight(true);
+        rsta.setBorder(BorderFactory.createEmptyBorder());
+        RTextScrollPane rtsp = new RTextScrollPane(rsta);
+        rtsp.setViewportBorder(BorderFactory.createEmptyBorder());
+        this.add(rtsp);
+        SyntaxScheme scheme = rsta.getSyntaxScheme();
+        scheme.getStyle(Token.RESERVED_WORD).foreground = Color.decode("#0d47a1");
+        scheme.getStyle(Token.LITERAL_STRING_DOUBLE_QUOTE).foreground = Color.decode("#e65100");
+        scheme.getStyle(Token.IDENTIFIER).foreground = Color.decode("#1b5e20");
+        scheme.getStyle(Token.COMMENT_EOL).foreground = Color.decode("#827717");
+        scheme.getStyle(Token.COMMENT_MULTILINE).foreground = Color.decode("#827717");
+        
+    }
 }

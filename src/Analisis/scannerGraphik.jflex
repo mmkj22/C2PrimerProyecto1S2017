@@ -13,13 +13,10 @@ letras      = [a-zA-ZñÑ]+
 id          ={letras}({numero}|"_"|{letras})*
 decimal     ={numero}"."{numero}
 nombreArchivo = {id}".gk"
-LineTerminator = \r|\n|\r\n
-InputCharacter = [^\r\n]
-Comment = {TraditionalComment} | {EndOfLineComment} | {DocumentationComment}
-TraditionalComment   = "/*" [^*] ~"*/" | "/*" "*"+ "/"
-EndOfLineComment     = "#" {InputCharacter}* {LineTerminator}
-DocumentationComment = "/**" {CommentContent} "*"+ "/"
-CommentContent       = ( [^*] | \*+ [^/*] )*
+Comment = {TraditionalComment} | {EndOfLineComment} 
+TraditionalComment   = "#/" ([^/]*)"/#"
+EndOfLineComment     = "#"([^\n]*)
+
 
 %cupsym symG
 %class lexicoGraphik

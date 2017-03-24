@@ -50,7 +50,7 @@ public class Resultado extends Value{
     {
         this.tipogk=tipo;
         this.valBool=val;
-        this.valorgk =""+value;
+        this.valorgk =""+val;
     }
     
     public Resultado(String tipo, double val)

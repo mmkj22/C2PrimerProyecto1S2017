@@ -46,12 +46,12 @@ non terminal NodoGK VISIBILIDAD, METODO, FUNCION, LST_PARAMETROS, PARAMETRO, MET
 non terminal NodoGK TIPO, DECLARACION, VARIABLES, ASIGNACION, LST_VARIABLES, VAR;
 non terminal NodoGK SI, SINO, MIENTRAS, HACERMIENTRAS, SELECCIONA, CONTINUAR, TERMINAR;
 non terminal NodoGK PARA, LST_CASOS, CASOS, RETORNO, LLAMADA_MET, LST_PARAM, PARAM;
-non terminal NodoGK ACCESOBJ, LST_NIVEL, NIVEL, GRAFICAR, LLAMADA_HK, AUMENTO; 
+non terminal NodoGK ACCESOBJ, LST_NIVEL, NIVEL, GRAFICAR, LLAMADA_HK; 
 non terminal NodoGK IMPORTS, LLAMARHK, ACCION;
-non terminal NodoGK ARREGLOS, DARR, AARR, LST_DIM, DIM, LST_DIMENSIONES, DIMENSIONES, ASIGNA_ARR;
+non terminal NodoGK ARREGLOS, DARR, AARR, LST_DIM, DIM;
 non terminal NodoGK DATOS, COLUMNA, LST_COLUMNA, PROCESAR, DONDE, DONDECADA, DONDETODO, HASKELL, NORMAL;
 non terminal NodoGK SENT_DATOS, SDATOS, EXP, MET_ESPECIALES, LST_DARR;
-non terminal NodoGK EXPRESION, ASIG_GRAFICAR, LST_CUERPO, ACCESO_MET, ASIG_PARA;
+non terminal NodoGK EXPRESION, LST_CUERPO, ACCESO_MET, ASIG_PARA, OPCIONES;
 
 precedence left tkn_or;
 precedence left tkn_xor;
@@ -319,7 +319,18 @@ SENTENCIAS ::= SI:nodo {: RESULT = nodo; :}
              | LLAMADA_HK:nodo int_der {: RESULT = nodo; :}
              | GRAFICAR:nodo {: RESULT = nodo; :}
              | IMPRIMIR:nodo {: RESULT = nodo; :}
-             | AUMENTO:nodo {: RESULT = nodo; :}
+             | EXPRESION:exp aumento int_der 
+                    {:
+                        NodoGK nodo = new NodoGK("aumento");
+                        nodo.hijos.add(exp);
+                        RESULT = nodo;
+                    :}
+             | EXPRESION:exp decremento int_der 
+                    {:
+                        NodoGK nodo = new NodoGK("decremento");
+                        nodo.hijos.add(exp);
+                        RESULT = nodo;
+                    :}
              | DECLARACION:nodo int_der {: RESULT = nodo; :}
              | ASIGNACION:nodo int_der {: RESULT = nodo; :}
              | ARREGLOS:nodo int_der {: RESULT = nodo; :}
@@ -438,7 +449,7 @@ CASOS ::= tkn_caso EXPRESION:exp dosp LST_SENTENCIAS:lstsen
                 nodo.hijos.add(lstsen);
                 RESULT = nodo;
             :}
-         |tkn_defecto LST_SENTENCIAS:lstsen
+         |tkn_defecto dosp LST_SENTENCIAS:lstsen
             {:
                 NodoGK nodo = new NodoGK("DEFECTO");
                 nodo.hijos.add(lstsen);
@@ -467,7 +478,18 @@ ASIG_PARA ::= tkn_var TIPO:tpo identificador:id igual EXPRESION:expr
             | ASIGNACION:asg
                 {: RESULT = asg; :};
 
-ACCION ::= AUMENTO:nodo {: RESULT = nodo; :}
+ACCION ::= EXPRESION:exp aumento
+                {:
+                    NodoGK nodo = new NodoGK("aumento");
+                    nodo.hijos.add(exp);
+                    RESULT = nodo;
+                :}
+          |EXPRESION:exp decremento
+                {:
+                    NodoGK nodo = new NodoGK("decremento");
+                    nodo.hijos.add(exp);
+                    RESULT = nodo;
+                :}
           |ASIGNACION:nodo {: RESULT = nodo; :};
           
 MIENTRAS ::= tkn_mientras par_izq EXPRESION:expr par_der llave_izq LST_SENTENCIAS:lstsen llave_der
@@ -519,6 +541,13 @@ LLAMADA_MET ::= tkn_llamar identificador:id par_izq LST_PARAM:lstpar par_der
                     RESULT = nodo;
                 :}
                |tkn_llamar identificador:id par_izq par_der
+                {:
+                    NodoGK nodo = new NodoGK("LLAMAR_MET");
+                    nodo.hijos.add(new NodoGK(id, idleft, idright));
+                    nodo.hijos.add(new NodoGK("sinparametros"));
+                    RESULT = nodo;
+                :}
+               |tkn_llamar tkn_datos:id par_izq par_der
                 {:
                     NodoGK nodo = new NodoGK("LLAMAR_MET");
                     nodo.hijos.add(new NodoGK(id, idleft, idright));
@@ -603,7 +632,7 @@ NIVEL ::= punto identificador:id
             :}
          |punto ACCESO_MET:nodo {: RESULT = nodo; :};
 
-GRAFICAR ::= tkn_graphikar par_izq ASIG_GRAFICAR:expr1 coma ASIG_GRAFICAR:expr2 par_der int_der
+GRAFICAR ::= tkn_graphikar par_izq EXPRESION:expr1 coma EXPRESION:expr2 par_der int_der
                 {:
                     NodoGK nodo = new NodoGK("GRAFICAR");
                     nodo.hijos.add(expr1);
@@ -611,12 +640,6 @@ GRAFICAR ::= tkn_graphikar par_izq ASIG_GRAFICAR:expr1 coma ASIG_GRAFICAR:expr2 
                     RESULT = nodo;
                 :};
 
-ASIG_GRAFICAR ::= identificador:id 
-                    {:
-                        NodoGK nodo = new NodoGK(id, idleft, idright);
-                        RESULT = nodo;
-                    :}
-                | llave_izq LST_DIMENSIONES:nodo llave_der {: RESULT = nodo;:};
 
 IMPRIMIR ::= tkn_imprimir par_izq EXPRESION:expr par_der int_der
                 {:
@@ -643,7 +666,7 @@ DARR::= tkn_var TIPO:tpo identificador:id LST_DIM:dims VISIBILIDAD:vis
                 nodo.hijos.add(vis);
                 RESULT = nodo;
             :}
-       |tkn_var TIPO:tpo identificador:id LST_DIM:dims VISIBILIDAD:vis igual ASIGNA_ARR:asg 
+       |tkn_var TIPO:tpo identificador:id LST_DIM:dims VISIBILIDAD:vis igual EXPRESION:asg 
             {:
                 NodoGK nodo = new NodoGK("DECLARA_ASIG_ARR");
                 nodo.hijos.add(tpo);
@@ -668,41 +691,6 @@ LST_DIM::= LST_DIM:nodo DIM:dims
 
 DIM ::= cor_izq EXPRESION:nodo cor_der {: RESULT = nodo; :};
 
-ASIGNA_ARR ::= identificador:id
-                    {:
-                        NodoGK nodo = new NodoGK("identificador");
-                        nodo.hijos.add(new NodoGK(id, idleft, idright));
-                        RESULT = nodo;
-                    :}
-             | LST_DARR:nodo {: RESULT = nodo; :};
-
-LST_DARR ::= LST_DARR:nodo coma llave_izq LST_DIMENSIONES:dims llave_der
-                {:
-                    nodo.hijos.add(dims);
-                    RESULT = nodo;
-                :}
-            |llave_izq LST_DIMENSIONES:dims llave_der
-                {:
-                    NodoGK nodo = new NodoGK("LISTA");
-                    nodo.hijos.add(dims);
-                    RESULT = nodo;
-                :};
-
-LST_DIMENSIONES ::= LST_DIMENSIONES:nodo coma DIMENSIONES:dims
-                        {:
-                            nodo.hijos.add(dims);
-                            RESULT = nodo;
-                        :}
-                   |DIMENSIONES:dims
-                        {:
-                            NodoGK nodo = new NodoGK("DIMENSIONES");
-                            nodo.hijos.add(dims);
-                            RESULT = nodo;
-                        :};
-
-DIMENSIONES::= EXPRESION:nodo {: RESULT = nodo; :}
-              |llave_izq LST_DIMENSIONES:dims llave_der {: RESULT = dims; :};
-                    
 
 AARR::= identificador:id LST_DIM:dims igual EXPRESION:expr
             {:
@@ -733,12 +721,13 @@ SENT_DATOS::= SENT_DATOS:nodo SDATOS:dato
                     RESULT = nodo;
                 :};
 
-SDATOS::=  PROCESAR:nodo {: RESULT = nodo; :}
-         | DONDE:nodo {: RESULT = nodo; :}
-         | DONDECADA:nodo {: RESULT = nodo; :}
-         | DONDETODO:nodo {: RESULT = nodo; :};
+SDATOS::=  PROCESAR:nodo {: RESULT = nodo; :};
+        
+OPCIONES ::= DONDE:nodo {: RESULT = nodo; :}
+           | DONDECADA:nodo {: RESULT = nodo; :}
+           | DONDETODO:nodo {: RESULT = nodo; :};
 
-COLUMNA::= tkn_columna par_izq EXPRESION:expr par_der int_der
+COLUMNA::= tkn_columna par_izq EXPRESION:expr par_der
             {:
                 NodoGK nodo = new NodoGK("columna");
                 nodo.hijos.add(expr);
@@ -748,10 +737,11 @@ COLUMNA::= tkn_columna par_izq EXPRESION:expr par_der int_der
 EXP ::= EXPRESION:nodo {: RESULT = nodo; :}
        |COLUMNA:nodo  {: RESULT = nodo; :};
 
-PROCESAR ::= tkn_procesar igual MET_ESPECIALES:met int_der
+PROCESAR ::= tkn_procesar igual MET_ESPECIALES:met int_der OPCIONES:opc
                 {:
                     NodoGK nodo = new NodoGK("PROCESAR");
                     nodo.hijos.add(met);
+                    nodo.hijos.add(opc);
                     RESULT = nodo;
                 :};
 
@@ -934,7 +924,7 @@ EXPRESION ::= EXPRESION:expr1 tkn_or EXPRESION:expr2
                 :}
              |identificador:id LST_DIM:dims
                 {:
-                    NodoGK nodo = new NodoGK("arreglo");
+                    NodoGK nodo = new NodoGK("AccesoArreglo");
                     nodo.hijos.add(new NodoGK(id, idleft, idright));
                     nodo.hijos.add(dims);
                     RESULT = nodo;
@@ -981,8 +971,16 @@ EXPRESION ::= EXPRESION:expr1 tkn_or EXPRESION:expr2
                 {:
                     RESULT = nodo;
                 :}
-             |AUMENTO:nodo
+             |EXPRESION:exp aumento
                 {:
+                    NodoGK nodo = new NodoGK("aumento");
+                    nodo.hijos.add(exp); 
+                    RESULT = nodo;
+                :}
+             |EXPRESION:exp decremento
+                {:
+                    NodoGK nodo = new NodoGK("decremento");
+                    nodo.hijos.add(exp); 
                     RESULT = nodo;
                 :}
              |ACCESOBJ:nodo
@@ -992,17 +990,23 @@ EXPRESION ::= EXPRESION:expr1 tkn_or EXPRESION:expr2
              |ACCESO_MET:nodo
                 {:
                     RESULT = nodo;
+                :}
+             |llave_izq LST_DARR:nodo llave_der
+                {:
+                    RESULT = nodo;
                 :};
 
-AUMENTO ::= identificador:id aumento
+
+LST_DARR ::= LST_DARR:nodo coma EXPRESION:dims
                 {:
-                    NodoGK nodo = new NodoGK("aumento");
-                    nodo.hijos.add(new NodoGK(id, idleft, idright)); 
+                    nodo.hijos.add(dims);
                     RESULT = nodo;
                 :}
-           |identificador:id decremento
+            |EXPRESION:exp
                 {:
-                    NodoGK nodo = new NodoGK("decremento");
-                    nodo.hijos.add(new NodoGK(id, idleft, idright)); 
+                    NodoGK nodo = new NodoGK("ARREGLO");
+                    nodo.hijos.add(exp);
                     RESULT = nodo;
+                
                 :};
+
