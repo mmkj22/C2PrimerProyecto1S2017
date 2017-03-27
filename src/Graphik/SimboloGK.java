@@ -21,15 +21,17 @@ public class SimboloGK implements Cloneable {
     private int numero_parametros;
     private int tipogk;
     private int orden=0;
-    public List<SimboloGK> elementosArreglo;
+    public List<Resultado> elementosArreglo;
     private int n_dimensiones;
-    private List<Integer> tamDimensiones;
+    private String lstDimensiones;
     public int linea;
     public int columna;
     private String visibilidad;
     private String rol;
     private int key;
-    private boolean isarreglo=false;
+    public boolean isarreglo=false;
+    private int total;
+    
     
     public SimboloGK()
     {
@@ -40,6 +42,7 @@ public class SimboloGK implements Cloneable {
         this.numero_parametros=0;
         this.elementosArreglo=new ArrayList();
         this.key=0;
+        this.total=0;
     }
     
     @Override
@@ -117,11 +120,11 @@ public class SimboloGK implements Cloneable {
         this.orden = orden;
     }
 
-    public List<SimboloGK> getElementosArregloGK() {
+    public List<Resultado> getElementosArregloGK() {
         return elementosArreglo;
     }
 
-    public void setElementosArregloGK(List<SimboloGK> elementosArreglo) {
+    public void setElementosArregloGK(List<Resultado> elementosArreglo) {
         this.elementosArreglo = elementosArreglo;
     }
 
@@ -196,7 +199,22 @@ public class SimboloGK implements Cloneable {
     public void setIsArreglo(boolean isarreglo) {
         this.isarreglo = isarreglo;
     }
-    
+
+    public int getTotal() {
+        return total;
+    }
+
+    public void setTotal(int total) {
+        this.total = total;
+    }
+
+    public String getLstDimensiones() {
+        return lstDimensiones;
+    }
+
+    public void setLstDimensiones(String lstDimensiones) {
+        this.lstDimensiones = lstDimensiones;
+    }
     
     
 }

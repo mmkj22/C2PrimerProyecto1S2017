@@ -6,6 +6,7 @@
 package Graphik;
 
 
+import Haskell.Value;
 import Logica.CargarCSV;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -42,6 +43,7 @@ public class EjecutarGK {
     List<String> lista_vis;
     List<Integer> linea;
     List<Integer> columna;
+    List<Resultado> arregloInit = new ArrayList();
     
     public EjecutarGK(NodoGK root, JTextArea txtResultados)
     {
@@ -2484,7 +2486,31 @@ public class EjecutarGK {
         }
         else if(nodo.valor.equals("LLAMARHK"))
         {
-        
+            System.out.println("EJ: Entro a Llamar Haskell");
+            if(existeHKGuardado(ambito, nodo.hijos.get(0).valor)){
+                List<Resultado> lst_parametros = new ArrayList();
+                for(NodoGK n : nodo.hijos.get(1).hijos)
+                {
+                    temp1=this.evaluarExpresion(ambito, n);
+                    if(temp1==null)
+                    {
+                        return null;
+                    }
+                    lst_parametros.add(temp1);
+                }
+                LlamadasHK llamadas = new LlamadasHK(txtResultados);
+                content = llamadas.generarLlamadaHK(nodo.hijos.get(0), lst_parametros);
+                if(content==null)
+                {
+                    return null;
+                }
+                return content;
+            }
+            else
+            {
+                //ERROR
+                return null;
+            }
         }
         else if(nodo.valor.equals("ACCESOBJ"))
         {
@@ -2498,7 +2524,6 @@ public class EjecutarGK {
                 return null;
             }
             Vector algo = (Vector) CargarCSV.modelo.getDataVector().elementAt(1);
-            
         }
         else 
         {
@@ -2716,11 +2741,11 @@ public class EjecutarGK {
                         {
                             if((boolean)bandera.peek())
                             {
-                            
+                                this.agregarArreglo(ambito, x);
                             }
                             else
                             {
-                            
+                                this.decArray(ambito, x);
                             }
                         }
                         else if(x.valor.equalsIgnoreCase("DECLARA_ASIG_VAR"))
@@ -2745,7 +2770,16 @@ public class EjecutarGK {
                         }
                         else if(x.valor.equalsIgnoreCase("DECLARA_ASIG_ARR"))
                         {
-                        
+                            System.out.println("EJ: Entro a Declara Asigna Arreglo");
+                            if((boolean)bandera.peek())
+                            {
+                                
+                            }
+                            else
+                            {
+                                this.decArray(ambito, x);
+                                this.decAsigArray(ambito, x);
+                            }
                         }
                         else if(x.valor.equalsIgnoreCase("ASIGNACION"))
                         {
@@ -2766,7 +2800,8 @@ public class EjecutarGK {
                         }
                         else if(x.valor.equalsIgnoreCase("ASIGNA_ARR"))
                         {
-                        
+                            System.out.println("Entro a Asignacion Arreglo");
+                            this.asigArray(ambito, x);
                         }
                         else if(x.valor.equalsIgnoreCase("SI"))
                         {
@@ -2834,7 +2869,31 @@ public class EjecutarGK {
                         }
                         else if(x.valor.equalsIgnoreCase("LLAMARHK"))
                         {
-                        
+                            System.out.println("EJ: Entro a Llamar Haskell");
+                            if(existeHKGuardado(ambito, x.hijos.get(0).valor)){
+                                List<Resultado> lst_parametros = new ArrayList();
+                                for(NodoGK n : x.hijos.get(1).hijos)
+                                {
+                                    aux3=this.evaluarExpresion(ambito, n);
+                                    if(aux3==null)
+                                    {
+                                        return;
+                                    }
+                                    lst_parametros.add(aux3);
+                                }
+                                LlamadasHK llamadas = new LlamadasHK(txtResultados);
+                                aux2 = llamadas.generarLlamadaHK(x.hijos.get(0), lst_parametros);
+                                if(aux2==null)
+                                {
+                                    return;
+                                }
+                                System.out.println("Parece que funciono la Llamada a HK");
+                            }
+                            else
+                            {
+                                //ERROR
+                                return;
+                            }
                         }
                         else if(x.valor.equalsIgnoreCase("ACCESOBJ"))
                         {
@@ -2899,6 +2958,23 @@ public class EjecutarGK {
                 }
             }
         }
+    }
+    
+    private boolean existeHKGuardado(String ambito, String nombreHK)
+    {
+        String [] ubicacion = ambito.split("-");
+        if(ubicacion.length>0)
+        {
+            if(this.listaClases.containsKey(ubicacion[0]))
+            {
+                ClaseGK clase = this.listaClases.get(ubicacion[0]);
+                if(clase.getLlamadasHK().contains(nombreHK))
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
     
     
@@ -3647,6 +3723,17 @@ public class EjecutarGK {
         }
     }
     
+    private void agregarArreglo(String ambito, NodoGK nodo)
+    {
+        MetodoGK metodo;
+        metodo=this.retornarMetodo(ambito);
+        if(metodo==null)
+        {
+            return;
+        }
+        this.hacerDeclaracionArr(metodo, nodo, ambito);
+    }
+    
     private void hacerDeclaracion(NodoGK raiz, MetodoGK metodo, String ambito_variable) {
         if (raiz != null) {
             lista_ids.clear();
@@ -4010,5 +4097,331 @@ public class EjecutarGK {
             }
         }
         return null;
+    }
+    
+    private void decArray(String ambito, NodoGK nodo)
+    {
+        SimboloGK variable;
+        String[] aux;
+        String arreglo = lDimCad(ambito, nodo.hijos.get(2));
+        aux = arreglo.split("-");
+        int locGlob= Integer.parseInt(aux[1]);
+        arreglo = aux[0];
+        variable = this.existeVariable(ambito, nodo.hijos.get(1));
+        if(variable==null)
+        {
+            return;
+        }
+        if(variable.getRol().equals("arr"))
+        {
+            variable.setTotal(locGlob);
+            variable.setLstDimensiones(arreglo);
+            Resultado content = new Resultado();
+            for(int i= 0; i<locGlob; i++)
+            {
+                content.elementosArreglo.add(new Resultado());
+            }
+            content.tipogk=variable.getTipoVariable();
+            content.totalgk = variable.getTotal();
+            content.lstdimensiones=variable.getLstDimensiones();
+            variable.setValor(content);
+        }
+    }
+    
+    private String lDimCad(String ambito, NodoGK nodo)
+    {
+        String retorno="";
+        Resultado aux3;
+        int valDim=1;
+        int i=1;
+        int size=nodo.hijos.size();
+        
+        for(NodoGK n : nodo.hijos)
+        {
+            aux3=this.evaluarExpresion(ambito, n);
+            if(aux3==null)
+            {
+                return null;
+            }
+            if(aux3.tipogk.equals("entero"))
+            {
+                retorno+=aux3.valorgk;
+                if(i<size)
+                {
+                    retorno+="_";
+                }
+                valDim*=aux3.valgk;
+                i++;
+            }
+            else
+            {
+                //ERROR SOLO TIENE QUE SER DIMENSIONES ENTERAS
+                return null;
+            }
+        }
+        retorno+="-"+String.valueOf(valDim);
+        return retorno;
+    }
+
+    private SimboloGK decAsigArray(String ambito, NodoGK nodo) {
+        SimboloGK variable=null;
+        NodoGK inita;
+        int loc, size;
+        Resultado aux2;
+        List<Resultado> arreglo = new  ArrayList();
+        if(!nodo.hijos.get(4).valor.equalsIgnoreCase("ARREGLO")){
+            variable = this.existeVariable(ambito, nodo.hijos.get(1));
+            if(variable == null)
+            {
+                return null;
+            }
+            if(!variable.getIsArreglo())
+            {
+                return null;
+            }
+            aux2=this.evaluarExpresion(ambito, nodo.hijos.get(4));
+            if(aux2==null)
+            {
+                return null;
+            }
+            if(variable.getTipoVariable().equalsIgnoreCase(aux2.tipogk))
+            {
+                if(variable.getTotal()<=aux2.totalgk)
+                {
+                    variable.setValor(aux2);
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            else
+            {
+                return null;
+            }
+        }
+        else
+        {
+            inita=nodo.hijos.get(4);
+            variable = this.existeVariable(ambito, nodo.hijos.get(1));
+            if(variable == null)
+            {
+                return null;
+            }
+            if(!variable.getRol().equalsIgnoreCase("arr"))
+            {
+                return null;
+            }
+            this.arregloInit.clear();
+            if(inita!=null)
+            {
+                this.inita(ambito, inita);
+            }
+            size=this.arregloInit.size();
+            if(size>0 && size==variable.getTotal())
+            {
+                for(int z=0; z<size; z++)
+                {
+                    aux2=this.arregloInit.get(z);
+                    if(!aux2.tipogk.equalsIgnoreCase(variable.getTipoVariable()))
+                    {
+                        break;
+                    }
+                    arreglo.add(aux2);
+                }
+            }
+            Resultado content = new Resultado(variable.getTipoVariable(), arreglo);
+            content.totalgk=variable.getTotal();
+            content.lstdimensiones=variable.getLstDimensiones();
+            content.setDimensiones(variable.getN_dimensiones());
+            content.setIsArreglo(true);
+            variable.setValor(content);
+        }
+        return variable;
+    }
+    
+    private void inita(String ambito, NodoGK nodo)
+    {
+        Resultado aux1;
+        for(NodoGK n : nodo.hijos)
+        {
+            if(n.valor.equals("ARREGLO"))
+            {
+                this.inita(ambito, n);
+            }
+            else
+            {
+                aux1=this.evaluarExpresion(ambito, n);
+                if(aux1==null)
+                {
+                    return;
+                }
+                this.arregloInit.add(aux1);
+            }
+        }
+    }
+    
+    private int mapeoLexicografico(List<Integer> i, List<Integer>m)
+    {
+        int sumatoria = 0;
+        int productoria = 1;
+        int k=m.size();
+        for( int x = 0; x<k; x++)
+        {
+            productoria = 1;
+            for(int y = x + 1; y<k; y++)
+            {
+                productoria = productoria * (m.get(y)-1+1);
+            }
+            sumatoria = sumatoria + (i.get(x)-1)*productoria;
+        }
+        return sumatoria;
+    }
+    
+    private void hacerDeclaracionArr(MetodoGK metodo, NodoGK raiz, String ambito) {
+        if (raiz != null) {
+            SimboloGK nueva_variable;
+            int dim; 
+            int total = 1;
+            nueva_variable = new SimboloGK();
+            nueva_variable.setId(raiz.hijos.get(1).valor);
+            nueva_variable.setLinea(raiz.hijos.get(1).getLinea());
+            nueva_variable.setColumna(raiz.hijos.get(1).getColumna());
+            nueva_variable.setTipoVariable(raiz.hijos.get(0).valor);
+            nueva_variable.setRol("arr");
+            nueva_variable.setVisibilidad(raiz.hijos.get(3).valor);
+            nueva_variable.setAmbito(ambito);
+            nueva_variable.setIsArreglo(true);
+            nueva_variable.setKey(22);
+            nueva_variable.setN_dimensiones(raiz.hijos.get(2).hijos.size());
+            if(!metodo.existeVar(nueva_variable.getId()) && !metodo.existePar(nueva_variable.getId())){
+                metodo.varLocales.put(nueva_variable.getId(), nueva_variable);
+            } else {
+                    //ERROR YA EXISTE
+            }
+            this.decArray(ambito, raiz);
+        }
+    }
+    
+    private SimboloGK asigArray(String ambito, NodoGK nodo)
+    {
+        SimboloGK reg1;
+        Resultado aux1;
+        int i, j, mapeo;
+        String total;
+        String[] lNum, lDim;
+        List<Integer> coordenadas = new ArrayList();
+        List<Integer> dimensiones = new ArrayList();
+        reg1=this.existeVariable(ambito, nodo.hijos.get(0));
+        if(reg1==null)
+        {
+            return null;
+        }
+        if(!reg1.getRol().equalsIgnoreCase("arr"))
+        {
+            return null;
+        }
+        total=this.getCadDimArray(ambito, nodo.hijos.get(1));
+        if(total.equalsIgnoreCase(""))
+        {
+            return null;
+        }
+        lNum=total.split("_");
+        lDim=reg1.getLstDimensiones().split("_");
+        j=lNum.length;
+        i=lDim.length;
+        if(i!=j)
+        {
+            return null;
+        }
+        for(int k=0; k<i; k++)
+        {
+            coordenadas.add(Integer.parseInt(lNum[k]));
+            dimensiones.add(Integer.parseInt(lDim[k]));
+        }
+        mapeo=this.mapeoLexicografico(coordenadas, dimensiones);
+        if(mapeo>=reg1.getTotal() || mapeo<0)
+        {
+            return null;
+        }
+        aux1=this.evaluarExpresion(ambito, nodo.hijos.get(2));
+        if(aux1==null)
+        {
+            return null;
+        }
+        Resultado content = (Resultado)reg1.getValor();
+        content.setPosition(mapeo, aux1);
+        reg1.setValor(content);
+        return reg1;
+    }
+    
+    private String getCadDimArray(String ambito, NodoGK n)
+    {
+        Resultado aux1;
+        String retorno="";
+        int size=0;
+        int i=1;
+        if(n!=null)
+        {
+            size=n.hijos.size();
+            for(NodoGK nodo: n.hijos)
+            {
+                aux1=this.evaluarExpresion(ambito, nodo);
+                if(aux1==null)
+                {
+                    return null;
+                }
+                retorno+=aux1.valorgk;
+                if(i<size)
+                {
+                    retorno+="_";
+                }
+                i++;
+            }
+        }
+        return retorno;
+    }
+    
+    private SimboloGK getArray(String ambito, NodoGK nodo)
+    {
+        SimboloGK reg1;
+        int i, j, mapeo;
+        String dim;
+        String [] lSc, lSm;
+        List<Integer> lNi = new ArrayList();
+        List<Integer> lNm = new ArrayList();
+        reg1=this.existeVariable(ambito, nodo.hijos.get(0));
+        if(reg1==null)
+        {
+            return null;
+        }
+        dim=this.getCadDimArray(ambito, nodo.hijos.get(1));
+        if(dim=="")
+        {
+            return null;
+        }
+        lSc=dim.split("_");
+        lSm=reg1.getLstDimensiones().split("_");
+        i=lSc.length;
+        j=lSm.length;
+        if(i!=j)
+        {
+            return null;
+        }
+        for(int k=0; k<i; k++)
+        {
+            lNi.add(Integer.parseInt(lSc[k]));
+            lNm.add(Integer.parseInt(lSm[k]));
+        }
+        mapeo = this.mapeoLexicografico(lNi, lNm);
+        if(mapeo>=reg1.getTotal() || mapeo<0)
+        {
+            return null;
+        }
+        Resultado content = new Resultado();
+        content.tipogk=reg1.getTipoVariable();
+        content.value=reg1.getValor();
+        reg1.setValor(content);
+        return reg1;
     }
 }

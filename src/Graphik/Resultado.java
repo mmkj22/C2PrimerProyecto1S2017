@@ -6,6 +6,8 @@
 package Graphik;
 
 import Haskell.Value;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -22,9 +24,14 @@ public class Resultado extends Value{
     public char valChar;
     public String id_result="";
     protected Object value;
+    public List<Resultado> elementosArreglo = new ArrayList();
+    public int totalgk;
+    public String lstdimensiones;
+            
     
     public Resultado()
     {
+        
     }
     
     public Resultado(int i)
@@ -72,5 +79,23 @@ public class Resultado extends Value{
         this.tipogk=tipo;
         this.value = val;
         this.valorgk=val.toString();
+    }
+    
+    public Resultado(String tipo, List<Resultado> lista)
+    {
+        this.tipogk = tipo;
+        this.elementosArreglo=lista;
+        this.setIsArreglo(true);
+    }
+    
+    public void setPosition(int mapeo, Resultado val)
+    {
+        this.elementosArreglo.add(mapeo, val);
+        
+    }
+    
+    public Resultado getPosition(int mapeo)
+    {
+        return this.elementosArreglo.get(mapeo);
     }
 }

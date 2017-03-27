@@ -136,6 +136,7 @@ public class RecorridoAST{
                 clase = new ClaseGK(nodo.hijos.get(0).valor, nodo.hijos.get(1).valor);
                 claseActual = nodo.hijos.get(0).valor;
                 clase.setNodo(nodo.hijos.get(2));
+                clase.setLlamadasHK(llamadasHK);
                 pasada1("", nodo.hijos.get(2));
                 RecorridoAST.listaClases.put(clase.getId(), clase);
                 contador++;
@@ -153,6 +154,7 @@ public class RecorridoAST{
                     clase.setNodo(nodo.hijos.get(3));
                     clase.setHereda(listaClases.get(nodo.hijos.get(1).valor).clone());
                     clase.getHereda().setId(nodo.hijos.get(0).valor);
+                    clase.setLlamadasHK(llamadasHK);
                     pasada1("",nodo.hijos.get(3));
                     RecorridoAST.listaClases.put(clase.getId(), clase);
                 }
@@ -167,10 +169,10 @@ public class RecorridoAST{
 
     private void llamadasHK(NodoGK n, String nombre) {
         if (n != null) {
+            llamadasHK = new ArrayList();
             if (n.hijos.size() > 0) {
-                llamadasHK = new ArrayList();
                 for (NodoGK t : n.hijos) {
-                    if(tablaHK.getHash().contains(t.valor))
+                    if(!tablaHK.getHash().contains(t.valor))
                     {
                         llamadasHK.add(t.valor);
                     }
@@ -647,6 +649,8 @@ public class RecorridoAST{
     private void hacerDeclaracionArr(NodoGK raiz) {
         if (raiz != null) {
             SimboloGK nueva_variable;
+            int dim; 
+            int total = 1;
             nueva_variable = new SimboloGK();
             nueva_variable.setId(raiz.hijos.get(1).valor);
             nueva_variable.setLinea(raiz.hijos.get(1).getLinea());
@@ -657,7 +661,7 @@ public class RecorridoAST{
             nueva_variable.setAmbito(ambito_variable);
             nueva_variable.setIsArreglo(true);
             nueva_variable.setN_dimensiones(raiz.hijos.get(2).hijos.size());
-            if (!ambito_variable.equals("")) {
+            if (!ambito_variable.equals("")){
                 if(!nuevoMetodo.existeVar(nueva_variable.getId()) && !nuevoMetodo.existePar(nueva_variable.getId())){
                     nuevoMetodo.varLocales.put(nueva_variable.getId(), nueva_variable);
                 } else {
@@ -673,7 +677,7 @@ public class RecorridoAST{
             }
         }
     }
-
+    
     private void hacerDeclaracionObj(NodoGK raiz) {
         if (raiz != null) {
             SimboloGK nueva_variable;
@@ -740,4 +744,6 @@ public class RecorridoAST{
         }
         return cadena;
     }
+
+   
 }

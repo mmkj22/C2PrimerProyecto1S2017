@@ -1132,7 +1132,7 @@ public class EjecucionHK {
             }
             else if(x.valor.equals("LLAMADA_MET"))
             {
-                System.out.println();
+                System.out.println("EJ: Entro a Llamada Metodo");
                 aux1=this.llamadaMetodo(ambito,x);
                 if(aux1==null)
                 {
