@@ -640,7 +640,6 @@ GRAFICAR ::= tkn_graphikar par_izq EXPRESION:expr1 coma EXPRESION:expr2 par_der 
                     RESULT = nodo;
                 :};
 
-
 IMPRIMIR ::= tkn_imprimir par_izq EXPRESION:expr par_der int_der
                 {:
                     NodoGK nodo = new NodoGK("IMPRIMIR");

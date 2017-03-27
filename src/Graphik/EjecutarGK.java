@@ -15,6 +15,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JTextArea;
 
 /**
@@ -33,7 +35,13 @@ public class EjecutarGK {
     private boolean vieneBreak=true;
     private boolean continuar = false;
     JTextArea txtResultados;
-    private boolean bandera = false;
+    Stack bandera = new Stack();
+    Stack variables = new Stack();
+    Resultado valorRetorno;
+    List<String> lista_ids;
+    List<String> lista_vis;
+    List<Integer> linea;
+    List<Integer> columna;
     
     public EjecutarGK(NodoGK root, JTextArea txtResultados)
     {
@@ -41,6 +49,7 @@ public class EjecutarGK {
         this.tabla = TablaSimbolosGK.getInstance();
         EjecutarGK.listaClases=this.tabla.getHash();
         this.txtResultados=txtResultados;
+        this.bandera.push(false);
         this.asignarGlobales();
         this.buscarPrincipal();
     }
@@ -2468,7 +2477,10 @@ public class EjecutarGK {
         }
         else if(nodo.valor.equals("LLAMAR_MET"))
         {
-        
+            System.out.println("EJ: Entro a llamar Metodo");
+            content = hacerLlamada(nodo, ambito);
+            return content;
+            
         }
         else if(nodo.valor.equals("LLAMARHK"))
         {
@@ -2608,19 +2620,55 @@ public class EjecutarGK {
         {
             aux1=this.getIdsGlobal(clase, nodo);
         }
+        if(aux1==null && clase.getHereda()!=null && ubicacion.length>1)
+        {
+            aux1=this.buscarVariablesLocalesHereda(ubicacion[1], clase.getHereda(), nodo);
+        }
+        if(aux1==null && clase.getHereda()!=null)
+        {
+            aux1=this.buscarVariablesGlobalesHereda(clase.getHereda(), nodo);
+        }
         return aux1;
     }
     
     SimboloGK getIdsLocal(MetodoGK metodo, NodoGK nodo)
     {
-        SimboloGK registro;
+        SimboloGK registro=null;
         if(metodo.varLocales.containsKey(nodo.valor))
         {
-            registro=metodo.varLocales.get(nodo.valor);
-            if(registro!=null)
+            if(!(boolean)this.bandera.peek())
             {
+                if(metodo.varLocales.get(nodo.valor).getKey()!=22)
+                {
+                    registro=metodo.varLocales.get(nodo.valor);
+                    if(registro == null)
+                    {
+                        return null;
+                    }
+                    return registro;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            else{
+                registro=metodo.varLocales.get(nodo.valor);
+                if(registro == null)
+                {
+                    return null;
+                }
                 return registro;
             }
+        }
+        else if (metodo.parametros.containsKey(nodo.valor))
+        {
+            registro = metodo.parametros.get(nodo.valor);
+            if(registro==null)
+            {
+                return null;
+            }
+            return registro;
         }
         return null;
     }
@@ -2651,13 +2699,13 @@ public class EjecutarGK {
             {
                 if(x!=null)
                 {
-                    if(romper==false || retorna==false)
+                    if(romper==false /*|| retorna==false*/)
                     {
                         if(x.valor.equalsIgnoreCase("DECLARA_VAR"))
                         {
-                            if(bandera)
+                            if((boolean)bandera.peek())
                             {
-                            
+                                this.agregarVariable(ambito, x, 0);
                             }
                             else
                             {
@@ -2666,7 +2714,7 @@ public class EjecutarGK {
                         }
                         else if(x.valor.equalsIgnoreCase("DECLARA_ARR"))
                         {
-                            if(bandera)
+                            if((boolean)bandera.peek())
                             {
                             
                             }
@@ -2678,10 +2726,17 @@ public class EjecutarGK {
                         else if(x.valor.equalsIgnoreCase("DECLARA_ASIG_VAR"))
                         {
                             System.out.println("EJ: Entro a Declaracion y Asignacion de variable");
-                            bien = this.DeclaraAsignaVariable(ambito, x);
-                            if(!bien)
+                            if((boolean)bandera.peek())
                             {
-                                return;
+                                this.agregarVariable(ambito,x, 1);
+                            }
+                            else
+                            {
+                                bien = this.DeclaraAsignaVariable(ambito, x);
+                                if(!bien)
+                                {
+                                    return;
+                                }
                             }
                         }
                         else if(x.valor.equalsIgnoreCase("DECLARA_ASIG_OBJ"))
@@ -2759,15 +2814,22 @@ public class EjecutarGK {
                             System.out.println("EJ: Entro a Retorno");
                             if(x.hijos.size()>0)
                             {
-                                
+                                aux3 = this.evaluarExpresion(ambito, x.hijos.get(0));
+                                if(aux3==null)
+                                {
+                                    return;
+                                }
+                                valorRetorno = aux3;
+                                return;
                             }
                             else
                             {
-                                retorna=true;
+                                //retorna=true;
                             }
                         }
                         else if(x.valor.equalsIgnoreCase("LLAMAR_MET"))
                         {
+                            System.out.println("EJ: Entro a Llamar Metodo");
                             this.hacerLlamada(x, ambito);
                         }
                         else if(x.valor.equalsIgnoreCase("LLAMARHK"))
@@ -2804,14 +2866,6 @@ public class EjecutarGK {
                             {
                                 System.out.println("EJ: Entro a DondeTodo");
                             }
-                        }
-                        else if(x.valor.equalsIgnoreCase("LLAMADA_HK_DATOS"))
-                        {
-                        
-                        }
-                        else if(x.valor.equalsIgnoreCase("LLAMADA_MET_DATOS"))
-                        {
-                        
                         }
                         else if(x.valor.equalsIgnoreCase("aumento"))
                         {
@@ -3032,28 +3086,35 @@ public class EjecutarGK {
     private void hacerIf(String ambito, NodoGK nodo)
     {
         Resultado aux3;
+        this.bandera.push(true);
+        List<String> lista = new ArrayList();
+        this.variables.push(lista);
         aux3=this.evaluarExpresion(ambito, nodo.hijos.get(0));
         if(aux3==null || !aux3.tipogk.equalsIgnoreCase("bool"))
         {
             //ERROR DE TIPO BOOL
             return;
         }
-        bandera=true;
         if(aux3.tipogk.equalsIgnoreCase("bool") && aux3.valBool)
         {
             this.recorrido(ambito, nodo.hijos.get(1));
         }
+        this.borrarVariables(ambito);
+        this.bandera.pop();
+        this.variables.pop();
     }
     
     private void hacerIfElse(String ambito, NodoGK nodo)
     {
         Resultado aux3;
+        this.bandera.push(true);
+        List<String> lista = new ArrayList();
+        this.variables.push(lista);
         aux3=this.evaluarExpresion(ambito, nodo.hijos.get(0).hijos.get(0));
         if(aux3==null || !aux3.tipogk.equalsIgnoreCase("bool"))
         {
             return;
         }
-        bandera=true;
         if(aux3.tipogk.equalsIgnoreCase("bool") && aux3.valBool)
         {
             this.recorrido(ambito, nodo.hijos.get(0).hijos.get(1));
@@ -3062,16 +3123,24 @@ public class EjecutarGK {
         {
             this.recorrido(ambito, nodo.hijos.get(1));
         }
+        this.borrarVariables(ambito);
+        this.variables.pop();
+        this.bandera.pop();
     }
     
     private void hacerMientras(String ambito, NodoGK nodo)
     {
         if(nodo!=null)
         {
-            bandera=true;
             while(this.evaluarExpresion(ambito, nodo.hijos.get(0)).valBool)
             {
+                this.bandera.push(true);
+                List<String> lista = new ArrayList();
+                this.variables.push(lista);
                 this.recorrido(ambito, nodo.hijos.get(1));
+                this.borrarVariables(ambito);
+                this.variables.pop();
+                this.bandera.pop();
                 if(romper)
                 {
                     romper=false;
@@ -3093,7 +3162,7 @@ public class EjecutarGK {
     {
         if(nodo!=null)
         {
-            bandera=true;
+            this.bandera.push(true);
             do
             {
                 this.recorrido(ambito, nodo.hijos.get(1));
@@ -3108,6 +3177,7 @@ public class EjecutarGK {
                         break;
                     }
             }while(this.evaluarExpresion(ambito, nodo.hijos.get(0)).valBool);
+            this.bandera.pop();
         }
     }
     
@@ -3115,6 +3185,7 @@ public class EjecutarGK {
     {
         Resultado aux1, aux2;
         boolean alguno = false;
+        this.bandera.push(true);
         aux1 = this.evaluarExpresion(ambito, nodo.hijos.get(0));
         if(aux1==null)
         {
@@ -3223,12 +3294,14 @@ public class EjecutarGK {
                 }
             }
         }
+        this.bandera.pop();
     }
     
     private void hacerPara(String ambito, NodoGK nodo)
     {
         Resultado aux1, aux2;
         boolean bien;
+        this.bandera.push(true);
         bien = this.DeclaraAsignaPara(ambito, nodo.hijos.get(0));
         if(!bien)
         {
@@ -3276,6 +3349,7 @@ public class EjecutarGK {
                 return;
             }
         }
+        this.bandera.pop();
     }
     
     private boolean DeclaraAsignaPara(String ambito, NodoGK nodo)
@@ -3286,11 +3360,16 @@ public class EjecutarGK {
         if(nodo.valor.equalsIgnoreCase("ASIGNACION"))
         {
             //CUANDO SOLO VIENE ASIGNACION
+            bien=this.AsignaVariable(ambito, nodo);
+            if(!bien)
+            {
+                return false;
+            }
         }
         else
         {
             //CUANDO VIENE DECLARACION Y ASIGNACION SE CREA TEMPORALMENTE
-            
+            this.agregarVariable(ambito, nodo, 1);
         }
         return bien;
     }
@@ -3312,8 +3391,12 @@ public class EjecutarGK {
         else
         {
             //AQUI VIENE UNA ASIGNACION
-            
-            return bien;
+            bien=this.AsignaVariable(ambito, nodo);
+            if(!bien)
+            {
+                return false;
+            }
+            return true;
         }
     }
     
@@ -3397,6 +3480,7 @@ public class EjecutarGK {
     
     public Resultado hacerLlamada(NodoGK algo, String ambito)
     {
+        MetodoGK metodo=null;
         List<Resultado> parametros = new ArrayList();
         String cadena = sacarParametros(ambito, parametros, algo);
         String idmetodo=algo.hijos.get(0).valor;
@@ -3405,11 +3489,15 @@ public class EjecutarGK {
             idmetodo+=cadena;
         }
         Resultado parametro = null;
-        MetodoGK metodo = existeMetodo(ambito, idmetodo);
-        if(metodo==null)
-        {
-            return null;
-        }
+        try {
+                metodo = existeMetodo(ambito, idmetodo).clone();
+                if(metodo==null)
+                {
+                    return null;
+                }
+            } catch (CloneNotSupportedException ex) {
+                Logger.getLogger(EjecutarGK.class.getName()).log(Level.SEVERE, null, ex);
+            }
         if(metodo.parametros.size()==parametros.size())
         {
             Set set = metodo.parametros.entrySet();
@@ -3444,6 +3532,42 @@ public class EjecutarGK {
                     }
                 }
             }
+            this.ambito.push(metodo.getAmbito()+"-"+metodo.getId());
+            this.bandera.push(false);
+            this.recorrido((String)this.ambito.peek(), metodo.getSentencias());
+            this.ambito.pop();
+            this.bandera.pop();
+            ambito=(String)this.ambito.peek();
+            if(valorRetorno==null)
+            {
+                return null;
+            }
+            switch(valorRetorno.tipogk)
+            {
+                case "entero":
+                    metodo.setRetorno(new Resultado("entero",valorRetorno.valgk));
+                    break;
+                case "decimal":
+                    metodo.setRetorno(new Resultado("decimal", valorRetorno.valDoble));
+                    break;
+                case "bool":
+                    metodo.setRetorno(new Resultado("bool", valorRetorno.valBool));
+                    break;
+                case "cadena":
+                    metodo.setRetorno(new Resultado("cadena", valorRetorno.valorgk));
+                    break;
+                case "caracter":
+                    metodo.setRetorno(new Resultado("caracter", valorRetorno.valChar));
+                    break;
+                default:
+                    metodo.setRetorno(valorRetorno);
+                    break;
+            }
+            return valorRetorno;
+        }
+        else
+        {
+        
         }
         return null;
     }
@@ -3459,8 +3583,27 @@ public class EjecutarGK {
             metodo = clase.metodos.get(nombre);
             return metodo;
         }
+        else if(clase.getHereda().metodos.containsKey(nombre))
+        {
+            metodo = clase.getHereda().metodos.get(nombre);
+        }
         return metodo;
     }
+    
+    
+    private MetodoGK traerMetodo(String ambito, String nombre)
+    {
+        MetodoGK metodo=null;
+        String[] ubicacion = ambito.split("-");
+        ClaseGK clase = EjecutarGK.listaClases.get(ubicacion[0]);
+        if(clase.metodos.containsKey(nombre))
+        {
+            metodo = clase.metodos.get(nombre);
+            return metodo;
+        }
+        return metodo;
+    }
+    
     
     public String sacarParametros(String ambito, List<Resultado> list, NodoGK nodo)
     {
@@ -3480,5 +3623,392 @@ public class EjecutarGK {
             }
         }
         return tipos;
+    }
+    
+    //METODOS PARA DECLARAR VARIABLES EN AMBITOS DE CICLOS---------------------------------------------------------------------------------------------
+    private void agregarVariable(String ambito, NodoGK nodo, int opc)
+    {
+        MetodoGK metodo;
+        metodo=this.retornarMetodo(ambito);
+        if(metodo==null)
+        {
+            return;
+        }
+        if(opc==0)
+        {
+            //SOLO HACER DECLARACION
+            this.hacerDeclaracion(nodo, metodo, ambito);
+        }
+        else if(opc==1)
+        {
+            //HACER DECLARACION
+            this.hacerDeclaracionAsignacion(nodo, metodo, ambito);
+            
+        }
+    }
+    
+    private void hacerDeclaracion(NodoGK raiz, MetodoGK metodo, String ambito_variable) {
+        if (raiz != null) {
+            lista_ids.clear();
+            lista_vis.clear();
+            linea.clear();
+            columna.clear();
+            sacarIds(lista_ids, lista_vis, raiz.hijos.get(1), linea, columna);
+            SimboloGK nueva_variable;
+            int contador = 0;
+            for (String s : lista_ids) {
+                switch (raiz.hijos.get(0).valor) {
+                    case "entero":
+                        nueva_variable = new SimboloGK("entero", s, 0, ambito_variable, 0);
+                        nueva_variable.setVisibilidad(lista_vis.get(contador));
+                        nueva_variable.setLinea(linea.get(contador));
+                        nueva_variable.setColumna(columna.get(contador));
+                        nueva_variable.setRol("var");
+                        nueva_variable.setKey(22);
+                        if(!metodo.existeVar(nueva_variable.getId()) && !metodo.existePar(nueva_variable.getId())){
+                                metodo.varLocales.put(nueva_variable.getId(), nueva_variable);
+                                List<String> lista = (List<String>)this.variables.peek();
+                                lista.add(nueva_variable.getId());
+                        }
+                        else
+                        {
+                        }
+                        break;
+                    case "cadena":
+                        nueva_variable = new SimboloGK("cadena", s, "", ambito_variable, 0);
+                        nueva_variable.setVisibilidad(lista_vis.get(contador));
+                        nueva_variable.setRol("var");
+                        nueva_variable.setLinea(linea.get(contador));
+                        nueva_variable.setColumna(columna.get(contador));
+                        nueva_variable.setKey(22);
+                        if(!metodo.existeVar(nueva_variable.getId()) && !metodo.existePar(nueva_variable.getId())){
+                                metodo.varLocales.put(nueva_variable.getId(), nueva_variable);
+                                List<String> lista = (List<String>)this.variables.peek();
+                                lista.add(nueva_variable.getId());
+                        }
+                        else
+                        {
+                        }
+                        break;
+                    case "caracter":
+                        nueva_variable = new SimboloGK("caracter", s, (char) 32, ambito_variable, 0);
+                        nueva_variable.setVisibilidad(lista_vis.get(contador));
+                        nueva_variable.setRol("var");
+                        nueva_variable.setLinea(linea.get(contador));
+                        nueva_variable.setColumna(columna.get(contador));
+                        nueva_variable.setKey(22);
+                        if(!metodo.existeVar(nueva_variable.getId()) && !metodo.existePar(nueva_variable.getId())){
+                                metodo.varLocales.put(nueva_variable.getId(), nueva_variable);
+                                List<String> lista = (List<String>)this.variables.peek();
+                                lista.add(nueva_variable.getId());
+                        }
+                        else
+                        {
+                        }
+                        break;
+                    case "bool":
+                        nueva_variable = new SimboloGK("bool", s, false, ambito_variable, 0);
+                        nueva_variable.setVisibilidad(lista_vis.get(contador));
+                        nueva_variable.setRol("var");
+                        nueva_variable.setLinea(linea.get(contador));
+                        nueva_variable.setColumna(columna.get(contador));
+                        nueva_variable.setKey(22);
+                        if(!metodo.existeVar(nueva_variable.getId()) && !metodo.existePar(nueva_variable.getId())){
+                                metodo.varLocales.put(nueva_variable.getId(), nueva_variable);
+                                List<String> lista = (List<String>)this.variables.peek();
+                                lista.add(nueva_variable.getId());
+                                
+                        }
+                        else
+                        {
+                        }
+                        break;
+                    case "decimal":
+                        nueva_variable = new SimboloGK("decimal", s, 0.0, ambito_variable, 0);
+                        nueva_variable.setVisibilidad(lista_vis.get(contador));
+                        nueva_variable.setRol("var");
+                        nueva_variable.setLinea(linea.get(contador));
+                        nueva_variable.setColumna(columna.get(contador));
+                        nueva_variable.setKey(22);
+                        if(!metodo.existeVar(nueva_variable.getId()) && !metodo.existePar(nueva_variable.getId())){
+                                metodo.varLocales.put(nueva_variable.getId(), nueva_variable);
+                                List<String> lista = (List<String>)this.variables.peek();
+                                lista.add(nueva_variable.getId());
+                        }
+                        else
+                        {
+                        }
+                        break;
+                    default:
+                        nueva_variable = new SimboloGK(raiz.hijos.get(0).valor, s, new ClaseGK(), ambito_variable, 0);
+                        nueva_variable.setVisibilidad(lista_vis.get(contador));
+                        nueva_variable.setRol("obj");
+                        nueva_variable.setLinea(linea.get(contador));
+                        nueva_variable.setColumna(columna.get(contador));
+                        nueva_variable.setKey(22);
+                        if(!metodo.existeVar(nueva_variable.getId()) && !metodo.existePar(nueva_variable.getId())){
+                                metodo.varLocales.put(nueva_variable.getId(), nueva_variable);
+                                List<String> lista = (List<String>)this.variables.peek();
+                                lista.add(nueva_variable.getId());
+                        }
+                        else
+                        {
+                        }
+                        break;
+                }
+                contador++;
+            }
+        }
+    }
+    
+    private void hacerDeclaracionAsignacion(NodoGK raiz, MetodoGK metodo, String ambito_variable) {
+        if (raiz != null) {
+            SimboloGK nueva_variable;
+            Resultado aux3;
+            switch (raiz.hijos.get(0).valor) {
+                case "entero":
+                    aux3=this.evaluarExpresion(ambito_variable, raiz.hijos.get(3));
+                    if(aux3==null)
+                    {
+                        return;
+                    }
+                    nueva_variable = new SimboloGK("entero", raiz.hijos.get(1).valor, aux3, ambito_variable, 0);
+                    nueva_variable.setVisibilidad(raiz.hijos.get(2).valor);
+                    nueva_variable.setRol("var");
+                    nueva_variable.setLinea(raiz.hijos.get(1).getLinea());
+                    nueva_variable.setColumna(raiz.hijos.get(1).getColumna());
+                    nueva_variable.setKey(22);
+                    if(!metodo.existeVar(nueva_variable.getId()) && !metodo.existePar(nueva_variable.getId())){
+                            metodo.varLocales.put(nueva_variable.getId(), nueva_variable);
+                            List<String> lista = (List<String>)this.variables.peek();
+                            lista.add(nueva_variable.getId());
+                    } 
+                    else {
+                            //ERROR YA EXISTE
+                    }
+                    break;
+                case "cadena":
+                    aux3=this.evaluarExpresion(ambito_variable, raiz.hijos.get(3));
+                    if(aux3==null)
+                    {
+                        return;
+                    }
+                    nueva_variable = new SimboloGK("cadena", raiz.hijos.get(1).valor, aux3, ambito_variable, 0);
+                    nueva_variable.setVisibilidad(raiz.hijos.get(2).valor);
+                    nueva_variable.setRol("var");
+                    nueva_variable.setLinea(raiz.hijos.get(1).getLinea());
+                    nueva_variable.setColumna(raiz.hijos.get(1).getColumna());
+                    nueva_variable.setKey(22);
+                    if(!metodo.existeVar(nueva_variable.getId()) && !metodo.existePar(nueva_variable.getId())){
+                            metodo.varLocales.put(nueva_variable.getId(), nueva_variable);
+                            List<String> lista = (List<String>)this.variables.peek();
+                            lista.add(nueva_variable.getId());
+                    } 
+                    else {
+                            //ERROR YA EXISTE
+                    }
+                    break;
+                case "caracter":
+                    aux3=this.evaluarExpresion(ambito_variable, raiz.hijos.get(3));
+                    if(aux3==null)
+                    {
+                        return;
+                    }
+                    nueva_variable = new SimboloGK("caracter", raiz.hijos.get(1).valor, aux3, ambito_variable, 0);
+                    nueva_variable.setVisibilidad(raiz.hijos.get(2).valor);
+                    nueva_variable.setRol("var");
+                    nueva_variable.setLinea(raiz.hijos.get(1).getLinea());
+                    nueva_variable.setColumna(raiz.hijos.get(1).getColumna());
+                    nueva_variable.setKey(22);
+                    if(!metodo.existeVar(nueva_variable.getId()) && !metodo.existePar(nueva_variable.getId())){
+                            metodo.varLocales.put(nueva_variable.getId(), nueva_variable);
+                            List<String> lista = (List<String>)this.variables.peek();
+                            lista.add(nueva_variable.getId());
+                    } 
+                    else {
+                            //ERROR YA EXISTE
+                    }
+                    break;
+                case "bool":
+                    aux3=this.evaluarExpresion(ambito_variable, raiz.hijos.get(3));
+                    if(aux3==null)
+                    {
+                        return;
+                    }
+                    nueva_variable = new SimboloGK("bool", raiz.hijos.get(1).valor, aux3, ambito_variable, 0);
+                    nueva_variable.setVisibilidad(raiz.hijos.get(2).valor);
+                    nueva_variable.setRol("var");
+                    nueva_variable.setLinea(raiz.hijos.get(1).getLinea());
+                    nueva_variable.setColumna(raiz.hijos.get(1).getColumna());
+                    nueva_variable.setKey(22);
+                    if(!metodo.existeVar(nueva_variable.getId()) && !metodo.existePar(nueva_variable.getId())){
+                            metodo.varLocales.put(nueva_variable.getId(), nueva_variable);
+                            List<String> lista = (List<String>)this.variables.peek();
+                            lista.add(nueva_variable.getId());
+                    } 
+                    else {
+                            //ERROR YA EXISTE
+                    }
+                    break;
+                case "decimal":
+                    aux3=this.evaluarExpresion(ambito_variable, raiz.hijos.get(3));
+                    if(aux3==null)
+                    {
+                        return;
+                    }
+                    nueva_variable = new SimboloGK("decimal", raiz.hijos.get(1).valor,aux3, ambito_variable, 0);
+                    nueva_variable.setVisibilidad(raiz.hijos.get(2).valor);
+                    nueva_variable.setRol("var");
+                    nueva_variable.setLinea(raiz.hijos.get(1).getLinea());
+                    nueva_variable.setColumna(raiz.hijos.get(1).getColumna());
+                    nueva_variable.setKey(22);
+                    if(!metodo.existeVar(nueva_variable.getId()) && !metodo.existePar(nueva_variable.getId())){
+                            metodo.varLocales.put(nueva_variable.getId(), nueva_variable);
+                            List<String> lista = (List<String>)this.variables.peek();
+                            lista.add(nueva_variable.getId());
+                    } 
+                    else {
+                            //ERROR YA EXISTE
+                    }
+                    break;
+                default:
+                    aux3=this.evaluarExpresion(ambito_variable, raiz.hijos.get(3));
+                    if(aux3==null)
+                    {
+                        return;
+                    }
+                    nueva_variable = new SimboloGK(raiz.hijos.get(0).valor, raiz.hijos.get(1).valor, aux3, ambito_variable, 0);
+                    nueva_variable.setVisibilidad(raiz.hijos.get(2).valor);
+                    nueva_variable.setRol("obj");
+                    nueva_variable.setLinea(raiz.hijos.get(1).getLinea());
+                    nueva_variable.setColumna(raiz.hijos.get(1).getColumna());
+                    nueva_variable.setKey(22);
+                    if(!metodo.existeVar(nueva_variable.getId()) && !metodo.existePar(nueva_variable.getId())){
+                            metodo.varLocales.put(nueva_variable.getId(), nueva_variable);
+                            List<String> lista = (List<String>)this.variables.peek();
+                            lista.add(nueva_variable.getId());
+                    } 
+                    else {
+                            //ERROR YA EXISTE
+                    }
+                    break;
+            }
+        }
+    }
+    
+    private void sacarIds(List<String> ids, List<String> vis, NodoGK raiz, List<Integer> linea, List<Integer> columna) {
+        if (raiz != null) {
+            for (NodoGK n : raiz.hijos) {
+                ids.add(n.hijos.get(0).valor);
+                vis.add(n.hijos.get(1).valor);
+                linea.add(n.hijos.get(0).getLinea());
+                columna.add(n.hijos.get(0).getColumna());
+            }
+        }
+    }
+    
+    private MetodoGK retornarMetodo(String ambito)
+    {
+        MetodoGK metodo=null;
+        String[] ubicacion = ambito.split("-");
+        ClaseGK clase = EjecutarGK.listaClases.get(ubicacion[0]);
+        if(ubicacion.length>1)
+        {
+            if(clase.metodos.containsKey(ubicacion[1]))
+            {
+                metodo = clase.metodos.get(ubicacion[1]);
+                return metodo;
+            }
+        }
+        return metodo;
+    }
+
+    private void borrarVariables(String ambito) {
+        MetodoGK metodo;
+        metodo=this.retornarMetodo(ambito);
+        if(metodo==null)
+        {
+            return;
+        }
+        List<String> lista = (List<String>)this.variables.peek();
+        for(String var : lista)
+        {
+            if(metodo.varLocales.containsKey(var))
+            {
+                if(metodo.varLocales.get(var).getKey()==22)
+                {
+                    metodo.varLocales.remove(var);
+                }
+            }
+        }
+    }
+
+    private SimboloGK buscarVariablesLocalesHereda(String nombre, ClaseGK clase , NodoGK nodo) {
+        SimboloGK registro; 
+        if(clase.metodos.containsKey(nombre))
+        {
+            MetodoGK metodo = clase.metodos.get(nombre);
+            if(metodo.varLocales.containsKey(nodo.valor))
+            {
+                if(!(boolean)this.bandera.peek())
+                {
+                    if(metodo.varLocales.get(nodo.valor).getKey()!=22)
+                    {
+                        registro=metodo.varLocales.get(nodo.valor);
+                        if(registro.getVisibilidad().equalsIgnoreCase("publico")||registro.getVisibilidad().equalsIgnoreCase("protegido"))
+                        {
+                            return registro;
+                        }
+                        else
+                        {
+                            return null;
+                        }
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+                else{
+                    registro=metodo.varLocales.get(nodo.valor);
+                    
+                    if(registro.getVisibilidad().equalsIgnoreCase("publico") || registro.getVisibilidad().equalsIgnoreCase("protegido"))
+                    {
+                        return registro;
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+            }
+            else if (metodo.parametros.containsKey(nodo.valor))
+            {
+                registro = metodo.parametros.get(nodo.valor);
+                if(registro.getVisibilidad().equalsIgnoreCase("publico") || registro.getVisibilidad().equalsIgnoreCase("protegido"))
+                {
+                    return registro;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
+        return null;
+    }
+    
+    private SimboloGK buscarVariablesGlobalesHereda(ClaseGK clase, NodoGK nodo)
+    {
+        SimboloGK registro;
+        if(clase.varGlobales.containsKey(nodo.valor))
+        {
+            registro= clase.varGlobales.get(nodo.valor);
+            if(registro.getVisibilidad().equalsIgnoreCase("publico") || registro.getVisibilidad().equalsIgnoreCase("protegido"))
+            {
+                return registro;
+            }
+        }
+        return null;
     }
 }

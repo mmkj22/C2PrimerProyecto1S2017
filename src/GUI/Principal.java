@@ -73,7 +73,7 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
     public Principal() {
         initComponents();
         masComponentes();
-        configurarEditor();
+        //configurarEditor();
         componentesAuxiliares();
         crearPorcentaje();
     }
@@ -99,7 +99,6 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
         fileCh = new javax.swing.JFileChooser();
         jMenuBar1 = new javax.swing.JMenuBar();
         mnuArchivo = new javax.swing.JMenu();
-        mnuCrear = new javax.swing.JMenuItem();
         mnuNuevo = new javax.swing.JMenu();
         mnuHaskell = new javax.swing.JMenuItem();
         mnuGraphik = new javax.swing.JMenuItem();
@@ -134,16 +133,6 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
         mnuArchivo.setText("Archivo");
         mnuArchivo.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
 
-        mnuCrear.setBackground(new java.awt.Color(255, 255, 255));
-        mnuCrear.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
-        mnuCrear.setText("Crear");
-        mnuCrear.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                mnuCrearActionPerformed(evt);
-            }
-        });
-        mnuArchivo.add(mnuCrear);
-
         mnuNuevo.setBackground(new java.awt.Color(255, 255, 255));
         mnuNuevo.setText("Nuevo");
         mnuNuevo.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
@@ -151,11 +140,21 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
         mnuHaskell.setBackground(new java.awt.Color(255, 255, 255));
         mnuHaskell.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         mnuHaskell.setText("Haskell++");
+        mnuHaskell.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                mnuHaskellActionPerformed(evt);
+            }
+        });
         mnuNuevo.add(mnuHaskell);
 
         mnuGraphik.setBackground(new java.awt.Color(255, 255, 255));
         mnuGraphik.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         mnuGraphik.setText("GraphiK");
+        mnuGraphik.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                mnuGraphikActionPerformed(evt);
+            }
+        });
         mnuNuevo.add(mnuGraphik);
 
         mnuArchivo.add(mnuNuevo);
@@ -198,6 +197,11 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
         mnuSalir.setBackground(new java.awt.Color(255, 255, 255));
         mnuSalir.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         mnuSalir.setText("Salir");
+        mnuSalir.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                mnuSalirActionPerformed(evt);
+            }
+        });
         mnuArchivo.add(mnuSalir);
 
         jMenuBar1.add(mnuArchivo);
@@ -289,12 +293,8 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
     }// </editor-fold>//GEN-END:initComponents
 
     private void mnuCerrarPActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mnuCerrarPActionPerformed
-        // TODO add your handling code here:
+        cerrar();        // TODO add your handling code here:
     }//GEN-LAST:event_mnuCerrarPActionPerformed
-
-    private void mnuCrearActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mnuCrearActionPerformed
-        crear();    // TODO add your handling code here:
-    }//GEN-LAST:event_mnuCrearActionPerformed
 
     private void btnEjecutarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnEjecutarActionPerformed
         ejecutarHK();        // TODO add your handling code here:
@@ -369,13 +369,24 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
         grafica.setVisible(true);
     }//GEN-LAST:event_mnuGraficaActionPerformed
 
-    private void crear()
+    private void mnuSalirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mnuSalirActionPerformed
+        salir();
+    }//GEN-LAST:event_mnuSalirActionPerformed
+
+    private void mnuHaskellActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mnuHaskellActionPerformed
+        crear(".hk");          // TODO add your handling code here:
+    }//GEN-LAST:event_mnuHaskellActionPerformed
+
+    private void mnuGraphikActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mnuGraphikActionPerformed
+        crear(".gk");            // TODO add your handling code here:
+    }//GEN-LAST:event_mnuGraphikActionPerformed
+
+    private void crear(String extension)
     {
-        Tabs tab = new Tabs();
+        Tabs tab = new Tabs(extension);
         contTabs++;
         TabControl.addTab("New "+contTabs, null, tab);
     }
-    
     
     public void ejecutarCSV(String cadena)
     {
@@ -402,7 +413,7 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
         if(actual!=null){
             try { 
                 reiniciarAnalisis();
-                String input=actual.txtEntrada.getText();
+                String input=actual.rsta.getText();
                 Reader reader = new StringReader(input);
                 Analisis.lexicoHanskell scan = new Analisis.lexicoHanskell(reader);
                 Analisis.sintacticoHaskell pars = new Analisis.sintacticoHaskell(scan);
@@ -429,7 +440,7 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
             try { 
                 reiniciarAnalisis();
                 TablaSimbolosGK.listaClases.clear();
-                String input=actual.txtEntrada.getText();
+                String input=actual.rsta.getText();
                 Reader reader = new StringReader(input);
                 Analisis.lexicoGraphik scan = new Analisis.lexicoGraphik(reader);
                 Analisis.sintacticoGraphik pars = new Analisis.sintacticoGraphik(scan);
@@ -438,7 +449,8 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
                 dibujarGK(pintarGK(pars.nodo,""));
                 RecorridoAST recorre = new RecorridoAST(pars.nodo);
                 recorre.primeraPasada(actual.getRuta(), actual.getNombre());
-                //Map<String, ClaseGK> listaClases = TablaSimbolosGK.getInstance().getHash();
+                Map<String, ClaseGK> listaClases = TablaSimbolosGK.getInstance().getHash();
+                String algo = "algo";
                 EjecutarGK ejecucion = new EjecutarGK(pars.nodo, txtConsola);
                 mostrarErrores("Graphik");
             } 
@@ -525,7 +537,6 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
     private javax.swing.JMenuItem mnuCargarDatos;
     private javax.swing.JMenuItem mnuCerrarP;
     private javax.swing.JMenuItem mnuCompilarGK;
-    private javax.swing.JMenuItem mnuCrear;
     private javax.swing.JMenuItem mnuCrearProyecto;
     private javax.swing.JMenuItem mnuErrorGraphik;
     private javax.swing.JMenuItem mnuErrorHaskell;
@@ -576,8 +587,6 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
         accEditor = new ManejoArchivos();
         manejador = new javax.swing.undo.UndoManager();
         fileCh = new javax.swing.JFileChooser();        
-        filtro = new javax.swing.filechooser.FileNameExtensionFilter("GraphiK", "graphik");             
-        fileCh.setFileFilter(filtro);   
     }
     
     //METODOS PARA EL ANALISIS
@@ -676,15 +685,15 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
     
     //METODOS PARA EL MANEJO DE ARCHIVOS
         private int askGuardar(){
-        int selec = 0;
-        if(mnuGuardar.isEnabled()){
-            selec = JOptionPane.showConfirmDialog(this, "¿Desea guardar el archivo?", "Guardar ...", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-            if(selec == 0){
-                guardar();
+            int selec = 0;
+            if(mnuGuardar.isEnabled()){
+                selec = JOptionPane.showConfirmDialog(this, "¿Desea guardar el archivo?", "Guardar ...", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+                if(selec == 0){
+                    guardar();
+                }
             }
+            return selec;
         }
-        return selec;
-    }
      
     private void onEditor(boolean b){
         Tabs actual = (Tabs)this.TabControl.getSelectedComponent();
@@ -712,41 +721,36 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
         int seleccion = fileCh.showSaveDialog(this);
         
         if(seleccion == javax.swing.JFileChooser.APPROVE_OPTION){
-            return accEditor.GuardarGK(fileCh.getSelectedFile().getPath(), actual.txtEntrada.getText());
+            boolean bandera = accEditor.Guardar(fileCh.getSelectedFile().getPath(), actual.rsta.getText());
+            if(bandera!=false)
+            {
+                actual.setRuta(accEditor.getRuta());
+            }
+            return bandera;
         }
         return false;
     }
     
-    private void nuevo(){
-        Tabs actual = (Tabs)this.TabControl.getSelectedComponent();
-        if(askGuardar() != -1){
-            accEditor.fichero = null;
-            actual.txtEntrada.setText(null);
-            if(!actual.txtEntrada.isEnabled()){
-                actual.txtEntrada.setBackground(new java.awt.Color(255,255,255,255));
-                actual.txtEntrada.requestFocus();
-                onEditor(true);
-            }
-            onGuardar(false);
-        }
-    }
     
     private void abrir(){   
         Tabs actual = (Tabs)this.TabControl.getSelectedComponent();
-        if(askGuardar() != -1){
-            if(abrirDialog()){
-                String texto = accEditor.Open();
-                if(texto != null){
-                    actual.txtEntrada.setText(texto);
-                    actual.setRuta(accEditor.getRuta());
-                    onGuardar(false);
-                    JOptionPane.showMessageDialog(null,"EL ARCHIVO SE ABRIO CON EXITO","Abrir",JOptionPane.INFORMATION_MESSAGE);
-                } else{
-                    JOptionPane.showMessageDialog(null,"NO SE PUDO ABRIR EL ARCHIVO","Abrir",JOptionPane.INFORMATION_MESSAGE);
+        if(actual!=null){
+            if(askGuardar() != -1){
+                if(abrirDialog()){
+                    String texto = accEditor.Open();
+                    if(texto != null){
+                        actual.rsta.setText(texto);
+                        actual.setRuta(accEditor.getRuta());
+                        onGuardar(false);
+                        JOptionPane.showMessageDialog(null,"EL ARCHIVO SE ABRIO CON EXITO","Abrir",JOptionPane.INFORMATION_MESSAGE);
+                    } 
+                    else{
+                        JOptionPane.showMessageDialog(null,"NO SE PUDO ABRIR EL ARCHIVO","Abrir",JOptionPane.INFORMATION_MESSAGE);
                     }
                 }
             }
         }
+    }
     
        private boolean guardar(){
            Tabs actual = (Tabs)this.TabControl.getSelectedComponent();
@@ -759,7 +763,7 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
                     return false;
                 }
             }else{
-                if(accEditor.Guardar(actual.txtEntrada.getText())){
+                if(accEditor.Guardar(actual.rsta.getText())){
                     onGuardar(false);
                     return true;
                 }else{
@@ -772,10 +776,8 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
     
     private void guardarComo(){
         if(guardarComoDialog()){
-            onGuardar(false);
             JOptionPane.showMessageDialog(null,"EL ARCHIVO SE GUARDO CON EXITO","Guardar",JOptionPane.INFORMATION_MESSAGE);
         }
-        
         else {
              JOptionPane.showMessageDialog(null,"NO SE PUDO GUARDAR EL ARCHIVO","Guardar",JOptionPane.INFORMATION_MESSAGE);
         }
@@ -956,7 +958,7 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
         
     }
      
-        private String parsearCSV()
+    private String parsearCSV()
     {
         FileReader fr=null;
         String cadena=""; 
@@ -985,24 +987,20 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
         return cadena;
     }
 
-    private void configurarEditor() {
-        AbstractTokenMakerFactory atmf = (AbstractTokenMakerFactory) TokenMakerFactory.getDefaultInstance();
-        atmf.putMapping("text/Principal", "GUI.GraphikSyntax");
-        rsta = new RSyntaxTextArea(20, 60);
-        rsta.setSyntaxEditingStyle("text/Principal");
-        rsta.setCodeFoldingEnabled(true);
-        rsta.setCurrentLineHighlightColor(new Color(227, 242, 253, 200));
-        rsta.setFadeCurrentLineHighlight(true);
-        rsta.setBorder(BorderFactory.createEmptyBorder());
-        RTextScrollPane rtsp = new RTextScrollPane(rsta);
-        rtsp.setViewportBorder(BorderFactory.createEmptyBorder());
-        this.add(rtsp);
-        SyntaxScheme scheme = rsta.getSyntaxScheme();
-        scheme.getStyle(Token.RESERVED_WORD).foreground = Color.decode("#0d47a1");
-        scheme.getStyle(Token.LITERAL_STRING_DOUBLE_QUOTE).foreground = Color.decode("#e65100");
-        scheme.getStyle(Token.IDENTIFIER).foreground = Color.decode("#1b5e20");
-        scheme.getStyle(Token.COMMENT_EOL).foreground = Color.decode("#827717");
-        scheme.getStyle(Token.COMMENT_MULTILINE).foreground = Color.decode("#827717");
-        
+    private void cerrar() {
+        Tabs actual = (Tabs)this.TabControl.getSelectedComponent();
+        if(actual!=null)
+        {
+            TabControl.remove(actual);
+        }
     }
+
+    private void salir() {
+        
+        int resp = JOptionPane.showConfirmDialog(null, "¿Está seguro que desea Salir?");
+        if (resp==0){
+            System.exit(0); 
+            setDefaultCloseOperation(this.EXIT_ON_CLOSE);
+        }
+    }    
 }

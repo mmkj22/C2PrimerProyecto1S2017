@@ -5,20 +5,29 @@
  */
 package Graphik;
 
+import Errores.Errores;
+import GUI.Principal;
+import Haskell.TablaSimbolos;
+import java.io.BufferedReader;
 import javax.swing.JOptionPane;
 import java.io.File;
+import java.io.FileReader;
+import java.io.Reader;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
  * @author Kristhal
  */
-public class RecorridoAST {
+public class RecorridoAST{
 
     NodoGK raiz;
     String rutaOficial;
@@ -35,6 +44,7 @@ public class RecorridoAST {
     MetodoGK nuevoMetodo;
     String claseActual;
     String parametros;
+    TablaSimbolos tablaHK = TablaSimbolos.getInstance();
 
     public RecorridoAST(NodoGK raiz) {
         this.raiz = raiz;
@@ -44,12 +54,12 @@ public class RecorridoAST {
         columna = new ArrayList();
     }
     
-    public void primeraPasada(String ruta, String name) {
+    public void primeraPasada(String ruta, String name) throws CloneNotSupportedException {
         this.rutaOficial = ruta;
         if (raiz != null) {
-            this.listaClase(raiz.hijos.get(2), name);
             this.listaImports(raiz.hijos.get(0), name);
             this.llamadasHK(raiz.hijos.get(1), name);
+            this.listaClase(raiz.hijos.get(2), name);
         }
     }
 
@@ -67,6 +77,7 @@ public class RecorridoAST {
                         f = new File(path);
                         if (f.exists()) {
                             System.out.println("Se encontro el archivo");
+                            this.parsearExt(path, aux);
                         } else {
                             JOptionPane.showMessageDialog(null, "El Archivo " + aux + " no se encuentra en la carpeta", "Imports", JOptionPane.INFORMATION_MESSAGE);
                         }
@@ -77,20 +88,80 @@ public class RecorridoAST {
             }
         }
     }
+    
+    private void parsearExt(String path, String nombre) {
+        NodoGK root;
+        String cadena = extraerArchivo(path);
+        if(!cadena.equals(""))
+        {
+            try
+            {
+                Reader reader = new StringReader(cadena);
+                Analisis.lexicoGraphik scan = new Analisis.lexicoGraphik(reader);
+                Analisis.sintacticoGraphik pars = new Analisis.sintacticoGraphik(scan);
+                pars.parse();
+                if(pars.nodo!=null)
+                {
+                    root=pars.nodo;
+                    this.listaImports(root.hijos.get(0), nombre);
+                    this.llamadasHK(root.hijos.get(1), nombre);
+                    this.listaClase(root.hijos.get(2), nombre);
+                }
+                else
+                {
+                    JOptionPane.showMessageDialog(null, "El archivo con ruta "+ path + " contiene errores." , "Imports", JOptionPane.INFORMATION_MESSAGE);
+                }
+            }
+            catch(Exception ex)
+            {
+                Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
+                Errores.getInstance().nuevoError(ex.getMessage());
+            }
+        }
+        else
+        {
+            JOptionPane.showMessageDialog(null, "El archivo con ruta "+ path + " no puede abrirse o no contiene texto." , "Imports", JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
 
-    private void listaClase(NodoGK n, String nombre) {
+    private void listaClase(NodoGK n, String nombre) throws CloneNotSupportedException {
         int contador = 0;
         for (NodoGK nodo : n.hijos) {
-            if(contador==0)
+            if(nodo.hijos.size()==3)
             {
-                TablaSimbolosGK.claseCompilar=nodo.hijos.get(0).valor;
+                if(contador==0)
+                {
+                    TablaSimbolosGK.claseCompilar=nodo.hijos.get(0).valor;
+                }
+                clase = new ClaseGK(nodo.hijos.get(0).valor, nodo.hijos.get(1).valor);
+                claseActual = nodo.hijos.get(0).valor;
+                clase.setNodo(nodo.hijos.get(2));
+                pasada1("", nodo.hijos.get(2));
+                RecorridoAST.listaClases.put(clase.getId(), clase);
+                contador++;
             }
-            clase = new ClaseGK(nodo.hijos.get(0).valor, nodo.hijos.get(1).valor);
-            claseActual = nodo.hijos.get(0).valor;
-            clase.setNodo(nodo.hijos.get(2));
-            pasada1("", nodo.hijos.get(2));
-            RecorridoAST.listaClases.put(clase.getId(), clase);
-            contador++;
+            else
+            {
+                if(contador==0)
+                {
+                    TablaSimbolosGK.claseCompilar=nodo.hijos.get(0).valor;
+                }
+                if(this.listaClases.containsKey(nodo.hijos.get(1).valor))
+                {
+                    clase = new ClaseGK(nodo.hijos.get(0).valor, nodo.hijos.get(2).valor);
+                    claseActual=nodo.hijos.get(0).valor;
+                    clase.setNodo(nodo.hijos.get(3));
+                    clase.setHereda(listaClases.get(nodo.hijos.get(1).valor).clone());
+                    clase.getHereda().setId(nodo.hijos.get(0).valor);
+                    pasada1("",nodo.hijos.get(3));
+                    RecorridoAST.listaClases.put(clase.getId(), clase);
+                }
+                else
+                {
+                    //ERROR TIENE QUE AGREGAR EL IMPORT PARA LA HERENCIA DE LA CLASE
+                }
+                contador++;
+            }
         }
     }
 
@@ -99,7 +170,14 @@ public class RecorridoAST {
             if (n.hijos.size() > 0) {
                 llamadasHK = new ArrayList();
                 for (NodoGK t : n.hijos) {
-                    llamadasHK.add(t.valor);
+                    if(tablaHK.getHash().contains(t.valor))
+                    {
+                        llamadasHK.add(t.valor);
+                    }
+                    else
+                    {
+                        //ERROR NO EXISTE;
+                    }
                 }
             }
         }
@@ -143,6 +221,7 @@ public class RecorridoAST {
                     }
                     this.pasada1(ambito_variable, nodo.hijos.get(3));
                     if (!clase.existeMet(nombre)) {
+                        nuevoMetodo.setId(nombre);
                         clase.metodos.put(nombre, nuevoMetodo);
                     } else {
                         //ERROR YA EXISTE
@@ -168,6 +247,7 @@ public class RecorridoAST {
                     }
                     this.pasada1(ambito_variable, nodo.hijos.get(4));
                     if (!clase.existeMet(nombre)) {
+                        nuevoMetodo.setId(nombre);
                         clase.metodos.put(nombre, nuevoMetodo);
                     } else {
                         //ERROR YA EXISTE
@@ -631,5 +711,33 @@ public class RecorridoAST {
                 columna.add(n.hijos.get(0).getColumna());
             }
         }
+    }
+    
+    private String extraerArchivo(String path)
+    {
+        FileReader fr=null;
+        String cadena=""; 
+        try{    
+            File archivo = new File (path);
+            fr = new FileReader (archivo);
+            BufferedReader br = new BufferedReader(fr);
+            String linea;
+            while((linea=br.readLine())!=null)
+            {
+                cadena+=linea;
+            }
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }finally{
+            try{                    
+                if( null != fr ){   
+                   fr.close();     
+                }                  
+            }catch (Exception e2){ 
+                e2.printStackTrace();
+            }
+        }
+        return cadena;
     }
 }

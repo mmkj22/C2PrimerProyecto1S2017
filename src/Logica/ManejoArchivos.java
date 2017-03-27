@@ -19,38 +19,14 @@ public class ManejoArchivos {
     private java.io.FileReader leerFichero;
     private java.io.BufferedReader leer;
     private String ruta;
-
-    public boolean GuardarHK(String path, String texto){
-        try {            
-            fichero = new java.io.File(path + ".hk");
-            escribir = new java.io.FileWriter(fichero, false);
-            pintar = new java.io.PrintWriter(escribir);          
-            pintar.write(texto);    
-            ruta=fichero.getAbsolutePath();
-            return true;            
-        } catch (IOException ex) {
-            Logger.getLogger(ManejoArchivos.class.getName()).log(Level.SEVERE, null, ex);
-        }finally {
-           if (escribir != null){               
-                try {
-                    escribir.close();
-                    
-                } catch (IOException ex) {
-                    Logger.getLogger(ManejoArchivos.class.getName()).log(Level.SEVERE, null, ex);
-                }
-           }
-        }
-        return false;
-    }
     
-    public boolean GuardarGK(String path, String texto){
+    public boolean Guardar(String path, String texto){
         try {            
-            fichero = new java.io.File(path + ".gk");
-            
+            fichero = new java.io.File(path);
             escribir = new java.io.FileWriter(fichero, false);
             pintar = new java.io.PrintWriter(escribir);          
             pintar.write(texto);
-            
+            ruta=fichero.getAbsolutePath();
             return true;            
         } catch (IOException ex) {
             Logger.getLogger(ManejoArchivos.class.getName()).log(Level.SEVERE, null, ex);
@@ -71,7 +47,6 @@ public class ManejoArchivos {
         try {
             pintar = new java.io.PrintWriter(fichero);          
             pintar.write(texto);
-            
             return true;            
         } catch (IOException ex) {
             Logger.getLogger(ManejoArchivos.class.getName()).log(Level.SEVERE, null, ex);

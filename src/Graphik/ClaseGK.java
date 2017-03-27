@@ -14,24 +14,30 @@ import java.util.TreeMap;
  *
  * @author Kristhal
  */
-public class ClaseGK {
+public class ClaseGK implements Cloneable{
     
     private String id;
     private String visibilidad;
     public Map<String, MetodoGK> metodos;
     public Map<String, SimboloGK> varGlobales;
-    private List<ClaseGK> hereda;
+    private ClaseGK hereda;
     private List<String> llamadasHK;
     private List<String> imports;
     private NodoGK nodo;
 
+    @Override
+    public ClaseGK clone() throws CloneNotSupportedException
+    {
+        return (ClaseGK)super.clone();
+    }
+    
     public ClaseGK()
     {
         id="";
         visibilidad="";
         metodos=new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         varGlobales = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        hereda=new ArrayList();
+        
     }
     
     public ClaseGK(String id, String visibilidad)
@@ -40,7 +46,7 @@ public class ClaseGK {
         this.visibilidad=visibilidad;
         metodos=new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         varGlobales = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        hereda=new ArrayList();
+        
     }
 
     public String getId() {
@@ -59,17 +65,17 @@ public class ClaseGK {
         this.visibilidad = visibilidad;
     }
 
-    public List<ClaseGK> getHereda() {
+    public ClaseGK getHereda() {
         return hereda;
     }
 
-    public void setHereda(List<ClaseGK> hereda) {
+    public void setHereda(ClaseGK hereda) {
         this.hereda = hereda;
     }
     
     public void addHerencia(ClaseGK clase)
     {
-        this.hereda.add(clase);
+        this.hereda = clase;
     }
 
     public List<String> getLlamadasHK() {

@@ -14,9 +14,9 @@ import java.util.TreeMap;
  *
  * @author Kristhal
  */
-public class MetodoGK {
+public class MetodoGK implements Cloneable{
     private NodoGK sentencias;
-    private NodoGK retorno;
+    private Resultado retorno;
     public Map<String, SimboloGK> parametros;
     public Map<String, SimboloGK> varLocales;
     private String id;
@@ -26,6 +26,12 @@ public class MetodoGK {
     private String tipo;
     private int linea;
     private int columna;
+    
+    @Override
+    public MetodoGK clone() throws CloneNotSupportedException
+    {
+        return (MetodoGK)super.clone();
+    }
 
     public MetodoGK()
     {
@@ -58,11 +64,11 @@ public class MetodoGK {
         this.sentencias = sentencias;
     }
 
-    public NodoGK getRetorno() {
+    public Resultado getRetorno() {
         return retorno;
     }
 
-    public void setRetorno(NodoGK retorno) {
+    public void setRetorno(Resultado retorno) {
         this.retorno = retorno;
     }
 
