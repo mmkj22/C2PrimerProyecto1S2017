@@ -16,12 +16,13 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 import org.jfree.ui.*;
 import java.util.List;
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 /**
  *
  * @author Kristhal
  */
-public class Graficar extends ApplicationFrame {
+public class Graficar extends JFrame {
     public static Graficar graficar = null;
     public static JFreeChart graficaGK;
     public static XYSeriesCollection dataset;
@@ -55,9 +56,9 @@ public class Graficar extends ApplicationFrame {
                     dataset, PlotOrientation.VERTICAL, true, true, false);
     }
     
-    public void addSerie(List<Resultado> ejex, List<Resultado> ejey)
+    public void addSerie(List<Resultado> ejex, List<Resultado> ejey, String key)
     {
-        final XYSeries serie = new XYSeries("");
+        final XYSeries serie = new XYSeries(key);
         if(ejex.size()==ejey.size())
         {
             for(int i=0; i<ejex.size(); i++)
@@ -97,6 +98,5 @@ public class Graficar extends ApplicationFrame {
         plot.setBackgroundPaint(Color.WHITE);
         plot.setRangeGridlinePaint(Color.BLACK);
         setContentPane(chartPanel);
-        
-    }
+    } 
 }

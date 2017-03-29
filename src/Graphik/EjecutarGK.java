@@ -9,6 +9,7 @@ package Graphik;
 import GUI.TablaResultados;
 import Haskell.Value;
 import Logica.CargarCSV;
+import Logica.Graficar;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -21,6 +22,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JTextArea;
 import javax.swing.table.DefaultTableModel;
+import org.jfree.ui.RefineryUtilities;
 
 /**
  *
@@ -48,6 +50,7 @@ public class EjecutarGK {
     List<Resultado> arregloInit = new ArrayList();
     Vector vectorActual;
     List<Integer> columnas;
+    private static int keySeries = 0;
     
     public EjecutarGK(NodoGK root, JTextArea txtResultados)
     {
@@ -2997,7 +3000,34 @@ public class EjecutarGK {
                         }
                         else if(x.valor.equalsIgnoreCase("GRAFICAR"))
                         {
-                        
+                            System.out.println("Entro a Graficar");
+                            aux2 = this.evaluarExpresion(ambito, x.hijos.get(0));
+                            if(aux2==null)
+                            {
+                                return;
+                            }
+                            aux3 = this.evaluarExpresion(ambito, x.hijos.get(1));
+                            if(aux3==null)
+                            {
+                                return;
+                            }
+                            if(aux2.arreglo && aux3.arreglo)
+                            {
+                                if(aux2.tipogk.equalsIgnoreCase(aux3.tipogk))
+                                {
+                                    if(aux2.totalgk==aux3.totalgk)
+                                    {
+                                        Graficar grafica = Graficar.getInstance();
+                                        grafica.addSerie(aux2.elementosArreglo, aux3.elementosArreglo, String.valueOf(keySeries));
+                                        grafica.personalizarGrafica();
+                                        grafica.mostrarGrafica();
+                                        grafica.pack();
+                                        RefineryUtilities.centerFrameOnScreen(grafica);// TODO add your handling code here:
+                                        grafica.setVisible(true);
+                                    }
+                                }
+                            }
+                            keySeries++;
                         }
                         else if(x.valor.equalsIgnoreCase("IMPRIMIR"))
                         {
@@ -3032,13 +3062,68 @@ public class EjecutarGK {
                             else if(x.hijos.get(1).valor.equalsIgnoreCase("DONDECADA"))
                             {
                                 System.out.println("EJ: Entro a DondeCada");
-                                
-                                
+                                aux3=this.evaluarExpresion(ambito, x.hijos.get(1).hijos.get(0));
+                                if(aux3==null)
+                                {
+                                    return;
+                                }
+                                if(!aux3.tipogk.equalsIgnoreCase("entero")){ return ;}
+                                int columna = aux3.valgk;
+                                TablaResultados tablares = new TablaResultados();
+                                for(int i=0; i<CargarCSV.modelo.getRowCount(); i++)
+                                {
+                                    Vector prueba = CargarCSV.getInstance().consultaDondeCada(new Resultado("entero", i));
+                                    if(prueba==null)
+                                    {
+                                        return;
+                                    }
+                                    aux3=(Resultado)prueba.get(columna);
+                                    vectorActual=prueba;
+                                    columnas=new ArrayList();
+                                    aux2=this.evaluarExpresion(ambito, x.hijos.get(0));
+                                    if(aux2==null)
+                                    {
+                                        return;
+                                    }
+                                    if(i==0)
+                                    {
+                                        tablares.cargarModeloDondeCada(x,columnas);
+                                    }
+                                    tablares.insertarFilas(aux3, aux2);
+                                }
+                                tablares.setVisible(true);
                             }
                             else if(x.hijos.get(1).valor.equalsIgnoreCase("DONDETODO"))
                             {
                                 System.out.println("EJ: Entro a DondeTodo");
-                                
+                                List<Resultado> valores = new ArrayList();
+                                aux3=this.evaluarExpresion(ambito, x.hijos.get(1).hijos.get(0));
+                                if(aux3==null)
+                                {
+                                    return;
+                                }
+                                if(!aux3.tipogk.equalsIgnoreCase("entero")){ return ;}
+                                TablaResultados tablares = new TablaResultados();
+                                for(int i=0; i<CargarCSV.modelo.getRowCount(); i++)
+                                {
+                                    Vector prueba = CargarCSV.getInstance().consultaDondeCada(new Resultado("entero", i));
+                                    if(prueba==null)
+                                    {
+                                        return;
+                                    }
+                                    vectorActual=prueba;
+                                    columnas=new ArrayList();
+                                    aux2=this.evaluarExpresion(ambito, x.hijos.get(0));
+                                    if(aux2==null)
+                                    {
+                                        return;
+                                    }
+                                    valores.add(aux2);
+                                }
+                                aux3= this.sumarTodo(valores);
+                                if(aux3==null){ return; }
+                                tablares.cargarModeloDondeTodo(x, columnas, aux3);
+                                tablares.setVisible(true);
                             }
                         }
                         else if(x.valor.equalsIgnoreCase("aumento"))
@@ -3072,6 +3157,38 @@ public class EjecutarGK {
                     }
                 }
             }
+        }
+    }
+    
+    private Resultado sumarTodo(List<Resultado> valores)
+    {
+        double resultado=0; 
+        int bandera = 0;
+        for(Resultado res : valores)
+        {
+            if(res.tipogk.equalsIgnoreCase("entero"))
+            {
+                resultado+=res.valgk;
+            }
+            else if(res.tipogk.equalsIgnoreCase("decimal"))
+            {
+                resultado+=res.valDoble;
+                bandera =1;
+            }
+            else
+            {
+                return null;
+            }
+        }
+        if(bandera==0)
+        {
+            Resultado content = new Resultado("entero",(int)resultado);
+            return content;
+        }
+        else
+        {
+            Resultado content = new Resultado("decimal",resultado);
+            return content;
         }
     }
     

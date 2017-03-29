@@ -348,20 +348,6 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
 
     private void mnuGraficaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mnuGraficaActionPerformed
         Graficar grafica = Graficar.getInstance();
-        List<Resultado> prueba = new ArrayList();
-        for(int i=-8; i<8; i++)
-        {
-            Resultado res = new Resultado("entero", i);
-            prueba.add(res);
-            
-        }
-        List<Resultado> otra = new ArrayList();
-        for(int i=-8; i<8; i++)
-        {
-            Resultado res = new Resultado("entero", i*i);
-            otra.add(res);
-        }
-        grafica.addSerie(prueba, otra);
         grafica.personalizarGrafica();
         grafica.mostrarGrafica();
         grafica.pack();

@@ -106,7 +106,6 @@ public class Resultado extends Value implements Cloneable{
     public void setPosition(int mapeo, Resultado val)
     {
         this.elementosArreglo.add(mapeo, val);
-        
     }
     
     public Resultado getPosition(int mapeo)

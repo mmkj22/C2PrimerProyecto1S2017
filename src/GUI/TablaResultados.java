@@ -23,8 +23,9 @@ public class TablaResultados extends javax.swing.JFrame {
      */
     public TablaResultados() {
         initComponents();
-        tableRes.setModel(modelo);
         tableRes.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        tableRes.setModel(modelo);
+        
     }
 
     /**
@@ -161,5 +162,57 @@ public class TablaResultados extends javax.swing.JFrame {
         }
         return cadena;
     }
+    
+    public void cargarModeloDondeCada(NodoGK nodo, List<Integer>columnas)
+    {
+        modelo.addColumn("Donde");
+        modelo.addColumn(sacarEncabezado(nodo, columnas));
+    }
 
+    public void insertarFilas(Resultado filtro, Resultado valor)
+    {
+        Object fila[] = new Object[2];
+                if(filtro.tipogk.equalsIgnoreCase("cadena"))
+        {
+            fila[0]= filtro.valorgk;
+        }
+        else if(filtro.tipogk.equalsIgnoreCase("entero"))
+        {
+            fila[0]= filtro.valgk;
+        }
+        else if(filtro.tipogk.equalsIgnoreCase("decimal"))
+        {
+            fila[0]= filtro.valDoble;
+        }       
+        if(valor.tipogk.equalsIgnoreCase("cadena"))
+        {
+            fila[1]= valor.valorgk;
+        }
+        else if(valor.tipogk.equalsIgnoreCase("entero"))
+        {
+            fila[1]= valor.valgk;
+        }
+        else if(valor.tipogk.equalsIgnoreCase("decimal"))
+        {
+            fila[1]= valor.valDoble;
+        }
+        modelo.addRow(fila);
+    }
+    
+    public void cargarModeloDondeTodo(NodoGK nodo, List<Integer> columnas, Resultado resultado)
+    {
+        modelo.addColumn("Donde");
+        modelo.addColumn(sacarEncabezado(nodo, columnas));
+        Object fila[] = new Object[2];
+        fila[0]="Todo";
+        if(resultado.tipogk.equalsIgnoreCase("entero"))
+        {
+            fila[1]= resultado.valgk;
+        }
+        else if(resultado.tipogk.equalsIgnoreCase("decimal"))
+        {
+            fila[1]= resultado.valDoble;
+        }
+        modelo.addRow(fila);
+    }
 }
