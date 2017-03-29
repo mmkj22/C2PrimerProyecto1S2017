@@ -326,24 +326,24 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
     }//GEN-LAST:event_mnuErrorGraphikActionPerformed
 
     private void mnuCargarDatosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mnuCargarDatosActionPerformed
-        try {
-            CargarDatos cargar = CargarDatos.getInstance();
-            CargarDatos.ruta="C:\\Users\\Kristhal\\Documents\\Proyecto1";
-            cargar.Donde();
-            // TODO add your handling code here:
-        } catch (Exception ex) {
-            Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
-        }
-//        CargarCSV.resetInstance();
-//        String cadena = this.parsearCSV();
-//        System.out.println(cadena);
-//        this.ejecutarCSV(cadena);
-//        CargarCSV cargar = CargarCSV.getInstance();
 //        try {
-//            cargar.printTable();
-//        } catch (PrinterException ex) {
+//            CargarDatos cargar = CargarDatos.getInstance();
+//            CargarDatos.ruta="C:\\Users\\Kristhal\\Documents\\Proyecto1";
+//            cargar.Donde();
+//            // TODO add your handling code here:
+//        } catch (Exception ex) {
 //            Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
 //        }
+        CargarCSV.resetInstance();
+        String cadena = this.parsearCSV();
+        System.out.println(cadena);
+        this.ejecutarCSV(cadena);
+        CargarCSV cargar = CargarCSV.getInstance();
+        try {
+            cargar.printTable();
+        } catch (PrinterException ex) {
+            Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }//GEN-LAST:event_mnuCargarDatosActionPerformed
 
     private void mnuGraficaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mnuGraficaActionPerformed

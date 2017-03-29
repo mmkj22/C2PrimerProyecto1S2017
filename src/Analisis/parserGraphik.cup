@@ -354,13 +354,13 @@ VARIABLES ::= tkn_var TIPO:tpo LST_VARIABLES:lst
                         nodo.hijos.add(expr);
                         RESULT = nodo;
                     :}
-              |tkn_var TIPO:tip identificador:id VISIBILIDAD:vis igual tkn_nuevo ACCESO_MET:asg
+              |tkn_var TIPO:tip identificador:id VISIBILIDAD:vis igual tkn_nuevo identificador:id2 par_izq par_der
                     {:
                         NodoGK nodo = new NodoGK("DECLARA_ASIG_OBJ");
                         nodo.hijos.add(tip);
                         nodo.hijos.add(new NodoGK(id, idleft, idright));
                         nodo.hijos.add(vis);
-                        nodo.hijos.add(asg);
+                        nodo.hijos.add(new NodoGK(id2, idleft, idright));
                         RESULT = nodo;
                     :};
 
@@ -702,8 +702,7 @@ AARR::= identificador:id LST_DIM:dims igual EXPRESION:expr
 
 DATOS::= tkn_vacio tkn_datos:id par_izq par_der llave_izq SENT_DATOS:sent llave_der
             {:
-                NodoGK nodo = new NodoGK("METODO");
-                nodo.hijos.add(new NodoGK(id, idleft, idright));
+                NodoGK nodo = new NodoGK("DATOS");
                 nodo.hijos.add(sent);
                 RESULT = nodo;
             :};

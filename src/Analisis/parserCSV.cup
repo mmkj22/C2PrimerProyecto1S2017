@@ -94,7 +94,7 @@ DATO ::= llave_izq EXP:ex llave_der {: RESULT = ex; :};
 EXP ::= texto:text
             {:
                 text=text.replace("\"","");
-                RESULT = new Resultado("decimal", text);
+                RESULT = new Resultado("cadena", text);
             :}
       | numero:num
             {:

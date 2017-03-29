@@ -6,6 +6,7 @@
 package Graphik;
 
 
+import GUI.TablaResultados;
 import Haskell.Value;
 import Logica.CargarCSV;
 import java.util.ArrayList;
@@ -19,6 +20,7 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JTextArea;
+import javax.swing.table.DefaultTableModel;
 
 /**
  *
@@ -44,6 +46,8 @@ public class EjecutarGK {
     List<Integer> linea;
     List<Integer> columna;
     List<Resultado> arregloInit = new ArrayList();
+    Vector vectorActual;
+    List<Integer> columnas;
     
     public EjecutarGK(NodoGK root, JTextArea txtResultados)
     {
@@ -118,10 +122,13 @@ public class EjecutarGK {
                 else if(n.valor.equals("DECLARA_ASIG_ARR"))
                 {
                     System.out.println("Globales: DECLARA_ASIG_ARR");
+                    this.decArray(claseActual, n);
+                    this.decAsigArray(claseActual, n);
                 }
                 else if(n.valor.equals("DECLARA_ASIG_OBJ"))
                 {
                     System.out.println("Globales: DECLARA_ASIG_OBJ");
+                    this.decAsigObj(claseActual, n);
                 }
             }
         }
@@ -227,6 +234,11 @@ public class EjecutarGK {
         else if(tipo.equalsIgnoreCase("bool") && valor.tipogk.equalsIgnoreCase("bool"))
         {
             content = new Resultado("bool", valor.valBool);
+            return content;
+        }
+        else if(tipo.equalsIgnoreCase(valor.tipogk))
+        {
+            content = new Resultado(valor.tipogk, valor.valObj);
             return content;
         }
         else
@@ -2469,24 +2481,26 @@ public class EjecutarGK {
             content = new Resultado("caracter", valor);
             return content; 
         }
-        else if(nodo.valor.equalsIgnoreCase("AccesoArreglo"))
-        {
-            
-        }
         else if(nodo.valor.equalsIgnoreCase("ARREGLO"))
         {
-            
+            System.out.println("EX: Entro a Arreglo");
+            content=this.generarArreglo(ambito, nodo);
+            if(content==null)
+            {
+                return null;
+            }
+            return content;
         }
         else if(nodo.valor.equals("LLAMAR_MET"))
         {
-            System.out.println("EJ: Entro a llamar Metodo");
+            System.out.println("EX: Entro a llamar Metodo");
             content = hacerLlamada(nodo, ambito);
             return content;
             
         }
         else if(nodo.valor.equals("LLAMARHK"))
         {
-            System.out.println("EJ: Entro a Llamar Haskell");
+            System.out.println("EX: Entro a Llamar Haskell");
             if(existeHKGuardado(ambito, nodo.hijos.get(0).valor)){
                 List<Resultado> lst_parametros = new ArrayList();
                 for(NodoGK n : nodo.hijos.get(1).hijos)
@@ -2512,9 +2526,52 @@ public class EjecutarGK {
                 return null;
             }
         }
+        else if(nodo.valor.equalsIgnoreCase("LLAMADA_HK_DATOS"))
+        {
+            if(existeHKGuardado(ambito, nodo.hijos.get(0).valor)){
+                List<Resultado> lst_parametros = new ArrayList();
+                for(NodoGK n : nodo.hijos.get(1).hijos)
+                {
+                    temp1=this.evaluarExpresion(ambito, n);
+                    if(temp1==null)
+                    {
+                        return null;
+                    }
+                    lst_parametros.add(temp1);
+                }
+                LlamadasHK llamadas = new LlamadasHK(txtResultados);
+                content = llamadas.generarLlamadaHK(nodo.hijos.get(0), lst_parametros);
+                if(content==null)
+                {
+                    return null;
+                }
+                return content;
+            }
+            else
+            {
+                //ERROR
+                return null;
+            }
+        }
+        else if(nodo.valor.equalsIgnoreCase("LLAMADA_MET_DATOS"))
+        {
+            System.out.println("EX: Entro a llamar Metodo");
+            content = hacerLlamada(nodo, ambito);
+            return content;
+        }
         else if(nodo.valor.equals("ACCESOBJ"))
         {
-        
+            
+        }
+        else if(nodo.valor.equalsIgnoreCase("AccesoArreglo"))
+        {
+            System.out.println("EX: Entro Acceso a Arreglo");
+            content = this.getArray(ambito, nodo);
+            if(content==null)
+            {
+                return null;
+            }
+            return content;
         }
         else if(nodo.valor.equalsIgnoreCase("columna"))
         {
@@ -2523,7 +2580,17 @@ public class EjecutarGK {
             {
                 return null;
             }
-            Vector algo = (Vector) CargarCSV.modelo.getDataVector().elementAt(1);
+            if(!temp1.tipogk.equalsIgnoreCase("entero"))
+            {
+                return null;
+            }
+            columnas.add(temp1.valgk);
+            content = (Resultado)vectorActual.get(temp1.valgk);
+            if(content==null)
+            {
+                return null;
+            }
+            return content;
         }
         else 
         {
@@ -2562,6 +2629,10 @@ public class EjecutarGK {
                 {
                     result = (Resultado)var.getValor();
                     content = new Resultado(var.getTipoVariable(), result.valgk);
+                    content.elementosArreglo=result.elementosArreglo;
+                    content.lstdimensiones=result.lstdimensiones;
+                    content.totalgk = result.totalgk;
+                    content.arreglo=result.arreglo;
                 }
                 content.value="esId";
                 content.id_result=var.getId();
@@ -2576,6 +2647,10 @@ public class EjecutarGK {
                 {
                     result = (Resultado)var.getValor();
                     content = new Resultado(var.getTipoVariable(), result.valDoble);
+                    content.elementosArreglo=result.elementosArreglo;
+                    content.lstdimensiones=result.lstdimensiones;
+                    content.totalgk = result.totalgk;
+                    content.arreglo=result.arreglo;
                 }
                 content.value="esId";
                 content.id_result=var.getId();
@@ -2585,11 +2660,16 @@ public class EjecutarGK {
                 if(tipo.equalsIgnoreCase("Boolean"))
                 {
                     content = new Resultado(var.getTipoVariable(), (boolean)var.getValor());
+                    
                 }
                 else
                 {
                     result = (Resultado)var.getValor();
                     content = new Resultado(var.getTipoVariable(), result.valBool);
+                    content.elementosArreglo=result.elementosArreglo;
+                    content.lstdimensiones=result.lstdimensiones;
+                    content.totalgk = result.totalgk;
+                    content.arreglo=result.arreglo;
                 }
                 content.value="esId";
                 content.id_result=var.getId();
@@ -2604,6 +2684,10 @@ public class EjecutarGK {
                 {
                     result = (Resultado)var.getValor();
                     content = new Resultado(var.getTipoVariable(), result.valorgk);
+                    content.elementosArreglo=result.elementosArreglo;
+                    content.lstdimensiones=result.lstdimensiones;
+                    content.totalgk = result.totalgk;
+                    content.arreglo=result.arreglo;
                 }
                 content.value="esId";
                 content.id_result=var.getId();
@@ -2618,13 +2702,17 @@ public class EjecutarGK {
                 {
                     result = (Resultado)var.getValor();
                     content = new Resultado(var.getTipoVariable(), result.valChar);
+                    content.elementosArreglo=result.elementosArreglo;
+                    content.lstdimensiones=result.lstdimensiones;
+                    content.totalgk = result.totalgk;
+                    content.arreglo=result.arreglo;
                 }
                 content.value="esId";
                 content.id_result=var.getId();
                 return content;
             default:
                 clase = (ClaseGK)var.getValor();
-                content = new Resultado(var.getTipoVariable(), var.getValor());
+                content = new Resultado(var.getTipoVariable(), clase);
                 content.value="esId";
                 content.id_result=var.getId();
                 return content;
@@ -2766,7 +2854,15 @@ public class EjecutarGK {
                         }
                         else if(x.valor.equalsIgnoreCase("DECLARA_ASIG_OBJ"))
                         {
-                        
+                            System.out.println("EJ: Entro a Declaracion y Asignacion de Objeto");
+                            if((boolean)bandera.peek())
+                            {
+                                
+                            }
+                            else
+                            {
+                                this.decAsigObj(ambito, x);
+                            }
                         }
                         else if(x.valor.equalsIgnoreCase("DECLARA_ASIG_ARR"))
                         {
@@ -2915,15 +3011,34 @@ public class EjecutarGK {
                             {
                                 //PRIMERO VOY A TRAER LA FILA DEL FILTRO
                                 System.out.println("EJ: Entro a Donde");
-                                
+                                aux2= this.evaluarExpresion(ambito, x.hijos.get(1).hijos.get(0));
+                                aux3= this.evaluarExpresion(ambito, x.hijos.get(1).hijos.get(1));
+                                Vector prueba = CargarCSV.getInstance().consultaDonde(aux2, aux3);
+                                if(prueba==null)
+                                {
+                                    return;
+                                }
+                                vectorActual=prueba;
+                                columnas = new ArrayList();
+                                aux2 = this.evaluarExpresion(ambito, x.hijos.get(0));
+                                if(aux2==null)
+                                {
+                                    return;
+                                }
+                                TablaResultados tableres = new TablaResultados();
+                                tableres.cargarModeloDonde(x, aux3, aux2, columnas);
+                                tableres.setVisible(true);
                             }
                             else if(x.hijos.get(1).valor.equalsIgnoreCase("DONDECADA"))
                             {
                                 System.out.println("EJ: Entro a DondeCada");
+                                
+                                
                             }
                             else if(x.hijos.get(1).valor.equalsIgnoreCase("DONDETODO"))
                             {
                                 System.out.println("EJ: Entro a DondeTodo");
+                                
                             }
                         }
                         else if(x.valor.equalsIgnoreCase("aumento"))
@@ -3378,6 +3493,8 @@ public class EjecutarGK {
         Resultado aux1, aux2;
         boolean bien;
         this.bandera.push(true);
+        List<String> lista = new ArrayList();
+        this.variables.push(lista);
         bien = this.DeclaraAsignaPara(ambito, nodo.hijos.get(0));
         if(!bien)
         {
@@ -3425,6 +3542,8 @@ public class EjecutarGK {
                 return;
             }
         }
+        this.borrarVariables(ambito);
+        this.variables.pop();
         this.bandera.pop();
     }
     
@@ -3445,7 +3564,14 @@ public class EjecutarGK {
         else
         {
             //CUANDO VIENE DECLARACION Y ASIGNACION SE CREA TEMPORALMENTE
-            this.agregarVariable(ambito, nodo, 1);
+            try{
+                this.agregarVariable(ambito, nodo, 1);
+                return true;
+            }
+            catch(Exception ex)
+            {
+                return false;
+            }
         }
         return bien;
     }
@@ -3603,7 +3729,7 @@ public class EjecutarGK {
                             s.setValor(new Resultado("caracter",parametro.valChar));
                             break;
                         default:
-                            s.setValor(new Resultado (parametro.tipogk, parametro.value));
+                            s.setValor(new Resultado (parametro.tipogk, parametro.valObj));
                             break;
                     }
                 }
@@ -4124,6 +4250,8 @@ public class EjecutarGK {
             content.tipogk=variable.getTipoVariable();
             content.totalgk = variable.getTotal();
             content.lstdimensiones=variable.getLstDimensiones();
+            content.setIsArreglo(true);
+            content.arreglo=true;
             variable.setValor(content);
         }
     }
@@ -4230,11 +4358,13 @@ public class EjecutarGK {
                     arreglo.add(aux2);
                 }
             }
+            String [] dimensiones = variable.getLstDimensiones().split("_");
             Resultado content = new Resultado(variable.getTipoVariable(), arreglo);
             content.totalgk=variable.getTotal();
             content.lstdimensiones=variable.getLstDimensiones();
             content.setDimensiones(variable.getN_dimensiones());
             content.setIsArreglo(true);
+            content.arreglo=true;
             variable.setValor(content);
         }
         return variable;
@@ -4371,20 +4501,28 @@ public class EjecutarGK {
                 {
                     return null;
                 }
-                retorno+=aux1.valorgk;
-                if(i<size)
-                {
-                    retorno+="_";
+                if(aux1.tipogk.equalsIgnoreCase("entero")){
+                    int val = aux1.valgk+1;
+                    retorno+=String.valueOf(val);
+                    if(i<size)
+                    {
+                        retorno+="_";
+                    }
+                    i++;
                 }
-                i++;
+                else
+                {
+                    return null;
+                }
             }
         }
         return retorno;
     }
     
-    private SimboloGK getArray(String ambito, NodoGK nodo)
+    private Resultado getArray(String ambito, NodoGK nodo)
     {
         SimboloGK reg1;
+        Resultado content;
         int i, j, mapeo;
         String dim;
         String [] lSc, lSm;
@@ -4418,10 +4556,94 @@ public class EjecutarGK {
         {
             return null;
         }
-        Resultado content = new Resultado();
-        content.tipogk=reg1.getTipoVariable();
-        content.value=reg1.getValor();
-        reg1.setValor(content);
-        return reg1;
+        Resultado aux2 = (Resultado) reg1.getValor();
+        content= aux2.getPosition(mapeo);
+        return content;
     }
+    
+    private Resultado generarArreglo(String ambito, NodoGK nodo)
+    {
+        Resultado content;
+        String tipo="";
+        if(nodo!=null)
+        {
+            this.arregloInit.clear();
+            this.inita(ambito, nodo);
+            for(int i=0; i<this.arregloInit.size(); i++)
+            {
+                if(i==0)
+                {
+                    tipo=this.arregloInit.get(i).tipogk;
+                }
+                else
+                {
+                    if(tipo.equalsIgnoreCase(this.arregloInit.get(i).tipogk))
+                    {
+                        content = new Resultado(tipo, this.arregloInit);
+                        content.totalgk=this.arregloInit.size();
+                        return content;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+    
+    //METODOS PARA TODO LO QUE TIENE QUE VER CON OBJETOS-----------------------------------------------------------------------------------------
+
+    private void decAsigObj(String ambito, NodoGK nodo) {
+        SimboloGK variable;
+        variable = this.existeVariable(ambito, nodo.hijos.get(1));
+        if(variable==null)
+        {
+            return;
+        }
+        if(!variable.getTipoVariable().equals(nodo.hijos.get(0).valor))
+        {
+            return;
+        }
+        if(nodo.hijos.get(0).valor.equals(nodo.hijos.get(3).valor))
+        {
+            if(existeImportacion(ambito, nodo.hijos.get(3).valor))
+            {
+                if(this.listaClases.containsKey(nodo.hijos.get(3).valor))
+                {
+                    ClaseGK clase = this.listaClases.get(nodo.hijos.get(3).valor);
+                    if(clase.getVisibilidad().equalsIgnoreCase("publico") || clase.getVisibilidad().equalsIgnoreCase("protegido"))
+                    {
+                        try{
+                        ClaseGK asignacion;
+                        ClonarCosas clonar = new ClonarCosas();
+                        asignacion = clonar.clonarClase(clase.clone());
+                        if(asignacion==null)
+                        {
+                            return;
+                        }
+                        this.asignacionGlobales(asignacion.getVarGlobales(), asignacion.getNodo());
+                        variable.setValor(asignacion);
+                        }catch(CloneNotSupportedException ex)
+                        {
+                            Logger.getLogger(EjecutarGK.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                }
+            }
+        }
+    }    
+    
+    private boolean existeImportacion(String ambito, String name)
+    {
+        ClaseGK clase;
+        String[] ubicacion = ambito.split("-");
+        if(this.listaClases.containsKey(ubicacion[0]))
+        {
+            clase=this.listaClases.get(ubicacion[0]);
+            if(clase.getImports().contains(name))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+    
 }

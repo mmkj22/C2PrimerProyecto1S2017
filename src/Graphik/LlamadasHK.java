@@ -31,9 +31,108 @@ public class LlamadasHK {
         NodoHK parametros = new NodoHK("PARAMETROS");
         for(Resultado par : lst)
         {
-            if(par.isIsArreglo())
+            if(par.arreglo)
             {
-                
+                NodoHK lista = new NodoHK("lista");
+                String[] dimensiones = par.lstdimensiones.split("_");
+                if(dimensiones.length>2 || dimensiones.length==0)
+                {
+                    return null;
+                }
+                else if(dimensiones.length==1)
+                {
+                    NodoHK dim = new NodoHK("DIMENSIONES");
+                    for(Resultado res : par.elementosArreglo)
+                    {
+                        NodoHK val;
+                        if(res.tipogk.equalsIgnoreCase("caracter"))
+                        {
+                            NodoHK tipo = new NodoHK(res.tipogk);
+                            val = new NodoHK("\'"+res.valorgk+"\'");
+                            tipo.hijos.add(val);
+                            dim.hijos.add(tipo);
+                        }
+                        else if(res.tipogk.equalsIgnoreCase("cadena"))
+                        {
+                            NodoHK tipo = new NodoHK(res.tipogk);
+                            val = new NodoHK("\""+res.valorgk+"\"");
+                            tipo.hijos.add(val);
+                            dim.hijos.add(tipo);
+                        }
+                        else
+                        {   
+                            NodoHK cal = new NodoHK("CALCULAR");
+                            NodoHK tipo = new NodoHK(res.tipogk);
+                            val = new NodoHK(res.valorgk);
+                            tipo.hijos.add(val);
+                            cal.hijos.add(tipo);
+                            dim.hijos.add(cal);
+                        }
+                        
+                    }
+                    lista.hijos.add(dim);
+                    parametros.hijos.add(lista);
+                }
+                else
+                {
+                    NodoHK dims = new NodoHK("DIMENSIONES");
+                    NodoHK dim = new NodoHK("DIMENSIONES");
+                    for(int i=0; i<Integer.parseInt(dimensiones[0]); i++)
+                    {
+                        if(par.elementosArreglo.get(i).tipogk.equalsIgnoreCase("caracter"))
+                        {
+                            NodoHK tipo = new NodoHK(par.elementosArreglo.get(i).tipogk);
+                            NodoHK val = new NodoHK("\'"+par.elementosArreglo.get(i).valorgk+"\'");
+                            tipo.hijos.add(val);
+                            dim.hijos.add(tipo);
+                        }
+                        else if(par.elementosArreglo.get(i).tipogk.equalsIgnoreCase("cadena"))
+                        {
+                            NodoHK tipo = new NodoHK(par.elementosArreglo.get(i).tipogk);
+                            NodoHK val = new NodoHK("\""+par.elementosArreglo.get(i).valorgk+"\"");
+                            tipo.hijos.add(val);
+                            dim.hijos.add(tipo);
+                        } 
+                        else
+                        {
+                            NodoHK cal = new NodoHK("CALCULAR");
+                            NodoHK tipo = new NodoHK(par.elementosArreglo.get(i).tipogk);
+                            NodoHK val = new NodoHK(par.elementosArreglo.get(i).valorgk);
+                            tipo.hijos.add(val);
+                            cal.hijos.add(tipo);
+                            dim.hijos.add(cal);
+                        }
+                        
+                    }
+                    int a = Integer.parseInt(dimensiones[0]);
+                    NodoHK otradim = new NodoHK("DIMENSIONES");
+                    for(int i=0; i<Integer.parseInt(dimensiones[1]); i++)
+                    {
+                        NodoHK cal = new NodoHK("CALCULAR");
+                        NodoHK tipo = new NodoHK(par.elementosArreglo.get(i+a).tipogk);
+                        if(par.elementosArreglo.get(i).tipogk.equalsIgnoreCase("caracter"))
+                        {
+                            NodoHK val = new NodoHK("\'"+par.elementosArreglo.get(i+a).valorgk+"\'");
+                            tipo.hijos.add(val);
+                        }
+                        else if(par.elementosArreglo.get(i).tipogk.equalsIgnoreCase("cadena"))
+                        {
+                            NodoHK val = new NodoHK("\""+par.elementosArreglo.get(i+a).valorgk+"\"");
+                            tipo.hijos.add(val);
+                        } 
+                        else
+                        {
+                            NodoHK val = new NodoHK(par.elementosArreglo.get(i+a).valorgk);
+                            tipo.hijos.add(val);
+                        }
+                        cal.hijos.add(tipo);
+                        otradim.hijos.add(cal);
+                    }
+                    dims.hijos.add(dim);
+                    dims.hijos.add(otradim);
+                    lista.hijos.add(dims);
+                    parametros.hijos.add(lista);
+                }
             }
             else
             {
@@ -72,6 +171,7 @@ public class LlamadasHK {
         {
             EjecucionHK ejecutar = new EjecucionHK(sentencias, txtResultados);
             ejecutar.Ejecutar();
+            NodoTabla ultimo = ejecutar.getUltimo();
             if(ejecutar.getUltimo()!=null)
             {
                 content=this.transformarAGraphik(ejecutar.getUltimo());
@@ -88,6 +188,7 @@ public class LlamadasHK {
     public Resultado transformarAGraphik(NodoTabla ultimo)
     {
         Resultado content;
+        Resultado elemento;
         Value valor = ultimo.getVal();
         if(!valor.isIsArreglo())
         {
@@ -109,7 +210,76 @@ public class LlamadasHK {
         }
         else if(ultimo.getRol().equalsIgnoreCase("arr") || valor.isIsArreglo())
         {
-        
+            System.out.println("Me quiere devolver un arreglo");
+            if(valor.getDimensiones()>1)
+            {
+               String lstdim="";
+               int total = 1;
+               content = new Resultado();
+               content.arreglo=true;
+               content.setIsArreglo(true);
+               content.tipogk=valor.getTipo();
+               for(int i=0; i<valor.getElementosArreglo().size(); i++)
+               {
+                   if(i==0)
+                   {
+                       lstdim+=valor.getElementosArreglo().get(i).getElementosArreglo().size();
+                       total*=valor.getElementosArreglo().get(i).getElementosArreglo().size();
+                   }
+                   else
+                   {
+                       lstdim+="_"+valor.getElementosArreglo().get(i).getElementosArreglo().size();
+                       total*=valor.getElementosArreglo().get(i).getElementosArreglo().size();
+                    }
+                    for(int j=0; j <valor.getElementosArreglo().get(i).getElementosArreglo().size(); j++)
+                    {
+                        switch(valor.getElementosArreglo().get(i).getElementosArreglo().get(j).getTipo())
+                        {
+                            case "numero":
+                                elemento = new Resultado("decimal", (double)valor.getElementosArreglo().get(i).getElementosArreglo().get(j).getVal());
+                                content.elementosArreglo.add(elemento);
+                                break;
+                            case "caracter":
+                                elemento = new Resultado("caracter", (char)valor.getElementosArreglo().get(i).getElementosArreglo().get(j).getVal());
+                                content.elementosArreglo.add(elemento);
+                                break;
+                            default: 
+                                break;
+                                //ERROR
+                        }
+                    }
+                }
+                content.totalgk=total;
+                content.lstdimensiones=lstdim;
+                return content;
+            }
+            else
+            {
+                content = new Resultado();
+                content.arreglo=true;
+                content.setIsArreglo(true);
+                content.lstdimensiones=String.valueOf(valor.getElementosArreglo().size());
+                content.totalgk=valor.getElementosArreglo().size();
+                content.tipogk=valor.getTipo();
+                for(int i=0; i <valor.getElementosArreglo().size(); i++)
+                {
+                    switch(valor.getElementosArreglo().get(i).getTipo())
+                    {
+                        case "numero":
+                            elemento = new Resultado("decimal", (double)valor.getElementosArreglo().get(i).getVal());
+                            content.elementosArreglo.add(elemento);
+                            break;
+                        case "caracter":
+                            elemento = new Resultado("caracter", (char)valor.getElementosArreglo().get(i).getVal());
+                            content.elementosArreglo.add(elemento);
+                            break;
+                        default: 
+                            break;
+                            //ERROR
+                    }
+                }
+                return content;
+            }
         }
         return null;
     }

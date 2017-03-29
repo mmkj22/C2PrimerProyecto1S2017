@@ -39,6 +39,7 @@ public class RecorridoAST{
     List<String> lista_vis;
     List<Integer> linea;
     List<Integer> columna;
+    List<String> imports;
     int contParametros = 0;
     ClaseGK clase;
     MetodoGK nuevoMetodo;
@@ -66,6 +67,7 @@ public class RecorridoAST{
     private void listaImports(NodoGK n, String nombre) {
         String aux = "";
         String path;
+        imports = new ArrayList();
         if (n != null) {
             if (n.hijos.size() > 0) {
                 for (NodoGK t : n.hijos) {
@@ -84,6 +86,7 @@ public class RecorridoAST{
                     } else {
                         JOptionPane.showMessageDialog(null, "Guarde el archivo antes de compilarlo debido a que no se encuentra una ruta para buscar los Imports", "Imports", JOptionPane.INFORMATION_MESSAGE);
                     }
+                    imports.add(t.valor.replace(".gk", ""));
                 }
             }
         }
@@ -137,6 +140,7 @@ public class RecorridoAST{
                 claseActual = nodo.hijos.get(0).valor;
                 clase.setNodo(nodo.hijos.get(2));
                 clase.setLlamadasHK(llamadasHK);
+                clase.setImports(imports);
                 pasada1("", nodo.hijos.get(2));
                 RecorridoAST.listaClases.put(clase.getId(), clase);
                 contador++;
@@ -155,6 +159,7 @@ public class RecorridoAST{
                     clase.setHereda(listaClases.get(nodo.hijos.get(1).valor).clone());
                     clase.getHereda().setId(nodo.hijos.get(0).valor);
                     clase.setLlamadasHK(llamadasHK);
+                    clase.setImports(imports);
                     pasada1("",nodo.hijos.get(3));
                     RecorridoAST.listaClases.put(clase.getId(), clase);
                 }
@@ -271,6 +276,24 @@ public class RecorridoAST{
                     } else {
                         //ERROR YA EXISTE
                     }
+                } else if(nodo.valor.equalsIgnoreCase("DATOS")){
+                    rol = "met";
+                    nuevoMetodo = new MetodoGK();
+                    ambito_variable = "_Datos";
+                    nuevoMetodo.setId("Datos");
+                    nuevoMetodo.setLinea(0);
+                    nuevoMetodo.setColumna(0);
+                    nuevoMetodo.setVisibilidad("publico");
+                    nuevoMetodo.setRol(rol);
+                    nuevoMetodo.setSentencias(nodo.hijos.get(0));
+                    nuevoMetodo.setAmbito(claseActual);
+                    this.pasada1(ambito_variable, nodo.hijos.get(0));
+                    if (!clase.existeMet(nombre)) {
+                        clase.metodos.put("Datos", nuevoMetodo);
+                    } else {
+                        //ERROR YA EXISTE
+                    }
+                    
                 } else if (nodo.valor.equals("DECLARA_ASIG_VAR")) {
                     ambito_variable = ambito;
                     this.hacerDeclaracionAsignacion(nodo);

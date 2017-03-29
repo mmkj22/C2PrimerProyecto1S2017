@@ -971,6 +971,18 @@ public class EjecucionHK {
             content.setTipo("cadena");
             return content;
         }
+        else if(tipo.equals("") && valor.getTipo().equals("caracter"))
+        {
+            content=valor;
+            content.setTipo("caracter");
+            return content;
+        }
+        else if (tipo.equals("caracter") && valor.getTipo().equals(""))
+        {
+            content=valor;
+            content.setTipo("caracter");
+            return content;
+        }
         else
         {
             return null;

@@ -13,7 +13,7 @@ import java.util.List;
  *
  * @author Kristhal
  */
-public class Resultado extends Value{
+public class Resultado extends Value implements Cloneable{
     protected int id;
     public String op="";
     public int valgk;
@@ -27,11 +27,19 @@ public class Resultado extends Value{
     public List<Resultado> elementosArreglo = new ArrayList();
     public int totalgk;
     public String lstdimensiones;
+    public boolean arreglo = false;
+    public ClaseGK valObj;
             
+    @Override
+    public Resultado clone() throws CloneNotSupportedException
+    {
+        return (Resultado)super.clone();
+    }
     
     public Resultado()
     {
-        
+        totalgk=0;
+        lstdimensiones="";
     }
     
     public Resultado(int i)
@@ -79,6 +87,13 @@ public class Resultado extends Value{
         this.tipogk=tipo;
         this.value = val;
         this.valorgk=val.toString();
+    }
+    
+    public Resultado(String tipo, ClaseGK val)
+    {
+        this.tipogk=tipo;
+        this.valObj=val;
+        
     }
     
     public Resultado(String tipo, List<Resultado> lista)

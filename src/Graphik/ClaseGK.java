@@ -6,6 +6,7 @@
 package Graphik;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -37,7 +38,6 @@ public class ClaseGK implements Cloneable{
         visibilidad="";
         metodos=new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         varGlobales = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        
     }
     
     public ClaseGK(String id, String visibilidad)
