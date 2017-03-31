@@ -371,11 +371,11 @@ ASIGNACION ::= identificador:id igual EXPRESION:expr
                         nodo.hijos.add(expr);
                         RESULT = nodo;
                     :}
-              |identificador:id igual tkn_nuevo ACCESO_MET:asg
+              |identificador:id igual tkn_nuevo identificador:id2 par_izq par_der
                     {:
                         NodoGK nodo = new NodoGK("ASIG_OBJ");
                         nodo.hijos.add(new NodoGK(id, idleft, idright));
-                        nodo.hijos.add(asg);
+                        nodo.hijos.add(new NodoGK(id2, id2left, id2right));
                         RESULT = nodo;
                     :}
               |ACCESOBJ:acc igual EXPRESION:exp
@@ -604,12 +604,14 @@ ACCESOBJ ::= identificador:id LST_NIVEL:lst
                 {:
                     NodoGK nodo = new NodoGK("ACCESOBJ");
                     nodo.hijos.add(new NodoGK(id, idleft, idright));
+                    nodo.hijos.add(lst);
                     RESULT = nodo;
                 :}
             |tkn_llamar identificador:id LST_NIVEL:lst
                 {:
-                    NodoGK nodo = new NodoGK("ACCESOBJ");
+                    NodoGK nodo = new NodoGK("ACCESOBJ_LLAMADA");
                     nodo.hijos.add(new NodoGK(id, idleft, idright));
+                    nodo.hijos.add(lst);
                     RESULT = nodo;
                 :};
 

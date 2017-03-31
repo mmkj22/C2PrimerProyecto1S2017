@@ -65,6 +65,7 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
     JScrollPane scroll;
     String comandoAnt="";
     private RSyntaxTextArea rsta;
+    public java.io.File fichero;
     
     /**
      * Creates new form Principal
@@ -73,7 +74,6 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
     public Principal() {
         initComponents();
         masComponentes();
-        //configurarEditor();
         componentesAuxiliares();
         crearPorcentaje();
     }
@@ -121,6 +121,8 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
         mnuErrores = new javax.swing.JMenu();
         mnuErrorHaskell = new javax.swing.JMenuItem();
         mnuErrorGraphik = new javax.swing.JMenuItem();
+        mnuFuncionesHaskell = new javax.swing.JMenu();
+        mnuArbol = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("GraphiK & Haskell++");
@@ -172,6 +174,11 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
         mnuGuardar.setBackground(new java.awt.Color(255, 255, 255));
         mnuGuardar.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         mnuGuardar.setText("Guardar");
+        mnuGuardar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                mnuGuardarActionPerformed(evt);
+            }
+        });
         mnuArchivo.add(mnuGuardar);
 
         mnuGuardarComo.setBackground(new java.awt.Color(255, 255, 255));
@@ -286,6 +293,18 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
 
         jMenuBar1.add(mnuErrores);
 
+        mnuFuncionesHaskell.setText("FuncionesHaskell");
+
+        mnuArbol.setText("Arbol de Funciones");
+        mnuArbol.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                mnuArbolActionPerformed(evt);
+            }
+        });
+        mnuFuncionesHaskell.add(mnuArbol);
+
+        jMenuBar1.add(mnuFuncionesHaskell);
+
         setJMenuBar(jMenuBar1);
 
         setSize(new java.awt.Dimension(1566, 849));
@@ -326,24 +345,10 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
     }//GEN-LAST:event_mnuErrorGraphikActionPerformed
 
     private void mnuCargarDatosActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mnuCargarDatosActionPerformed
-//        try {
-//            CargarDatos cargar = CargarDatos.getInstance();
-//            CargarDatos.ruta="C:\\Users\\Kristhal\\Documents\\Proyecto1";
-//            cargar.Donde();
-//            // TODO add your handling code here:
-//        } catch (Exception ex) {
-//            Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
-//        }
         CargarCSV.resetInstance();
-        String cadena = this.parsearCSV();
+        String cadena = this.parsearCSV(abrirCSV());
         System.out.println(cadena);
         this.ejecutarCSV(cadena);
-        CargarCSV cargar = CargarCSV.getInstance();
-        try {
-            cargar.printTable();
-        } catch (PrinterException ex) {
-            Logger.getLogger(Principal.class.getName()).log(Level.SEVERE, null, ex);
-        }
     }//GEN-LAST:event_mnuCargarDatosActionPerformed
 
     private void mnuGraficaActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mnuGraficaActionPerformed
@@ -367,11 +372,21 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
         crear(".gk");            // TODO add your handling code here:
     }//GEN-LAST:event_mnuGraphikActionPerformed
 
+    private void mnuArbolActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mnuArbolActionPerformed
+        GraficarTreeHaskell arbol = new GraficarTreeHaskell();
+        arbol.setVisible(true);// TODO add your handling code here:
+    }//GEN-LAST:event_mnuArbolActionPerformed
+
+    private void mnuGuardarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mnuGuardarActionPerformed
+        soloGuardar();    // TODO add your handling code here:
+    }//GEN-LAST:event_mnuGuardarActionPerformed
+
     private void crear(String extension)
     {
         Tabs tab = new Tabs(extension);
         contTabs++;
         TabControl.addTab("New "+contTabs, null, tab);
+        
     }
     
     public void ejecutarCSV(String cadena)
@@ -380,9 +395,6 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
             try { 
                 txtConsola.setText(cadena);
                 String input=cadena;
-//                Reader reader = new StringReader(input);
-//                Analisis.lexicoCSV scan = new Analisis.lexicoCSV(reader);
-//                Analisis.sintacticoCSV pars = new Analisis.sintacticoCSV(scan);
                 Analisis.lexicoCSV scan = new Analisis.lexicoCSV(new java.io.BufferedReader(new java.io.StringReader(input)));
                 new Analisis.sintacticoCSV(scan).parse();
                 
@@ -519,6 +531,7 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
     private javax.swing.JMenu jMenu2;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JMenuItem mnuAbrir;
+    private javax.swing.JMenuItem mnuArbol;
     private javax.swing.JMenu mnuArchivo;
     private javax.swing.JMenuItem mnuCargarDatos;
     private javax.swing.JMenuItem mnuCerrarP;
@@ -528,6 +541,7 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
     private javax.swing.JMenuItem mnuErrorHaskell;
     private javax.swing.JMenu mnuErrores;
     private javax.swing.JMenuItem mnuExportarProyecto;
+    private javax.swing.JMenu mnuFuncionesHaskell;
     private javax.swing.JMenuItem mnuGrafica;
     private javax.swing.JMenuItem mnuGraphik;
     private javax.swing.JMenuItem mnuGuardar;
@@ -671,14 +685,20 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
     
     //METODOS PARA EL MANEJO DE ARCHIVOS
         private int askGuardar(){
-            int selec = 0;
-            if(mnuGuardar.isEnabled()){
-                selec = JOptionPane.showConfirmDialog(this, "¿Desea guardar el archivo?", "Guardar ...", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-                if(selec == 0){
-                    guardar();
+            Tabs actual = (Tabs)this.TabControl.getSelectedComponent();
+            if(actual!=null){
+                if(!actual.rsta.getText().equals("")){
+                    int selec = 0;
+                    if(mnuGuardar.isEnabled()){
+                        selec = JOptionPane.showConfirmDialog(this, "¿Desea guardar el archivo?", "Guardar ...", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+                        if(selec == 0){
+                            guardar();
+                        }
+                    }
+                    return selec;
                 }
             }
-            return selec;
+            return 1;
         }
      
     private void onEditor(boolean b){
@@ -686,11 +706,7 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
         mnuGuardar.setEnabled(b);
         actual.enable(b);      
     }
-    
-    private void onGuardar(boolean b){
-        mnuGuardar.setEnabled(b);
-        
-    }
+   
 //    
     private boolean abrirDialog(){              
         int seleccion = fileCh.showDialog(this, "Seleecionar archivo ...");
@@ -700,7 +716,19 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
             return true;
         }
         return false;
-    }    
+    }
+
+    private String abrirCSV()
+    {
+        String cadena="";
+        int seleccion = fileCh.showDialog(this,"Seleccionar archivo ...");
+        if(seleccion == javax.swing.JFileChooser.APPROVE_OPTION)
+        {
+            fichero = fileCh.getSelectedFile();
+            cadena = fichero.getAbsolutePath();
+        }
+        return cadena;
+    }
 //    
     private boolean guardarComoDialog(){
         Tabs actual = (Tabs)this.TabControl.getSelectedComponent();
@@ -711,12 +739,13 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
             if(bandera!=false)
             {
                 actual.setRuta(accEditor.getRuta());
+                int index = TabControl.getSelectedIndex();
+                TabControl.setTitleAt(index, actual.getName());
             }
             return bandera;
         }
         return false;
     }
-    
     
     private void abrir(){   
         Tabs actual = (Tabs)this.TabControl.getSelectedComponent();
@@ -727,7 +756,36 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
                     if(texto != null){
                         actual.rsta.setText(texto);
                         actual.setRuta(accEditor.getRuta());
-                        onGuardar(false);
+                        int index = TabControl.getSelectedIndex();
+                        TabControl.setTitleAt(index, actual.getName());
+                        JOptionPane.showMessageDialog(null,"EL ARCHIVO SE ABRIO CON EXITO","Abrir",JOptionPane.INFORMATION_MESSAGE);
+                    } 
+                    else{
+                        JOptionPane.showMessageDialog(null,"NO SE PUDO ABRIR EL ARCHIVO","Abrir",JOptionPane.INFORMATION_MESSAGE);
+                    }
+                }
+            }
+        }
+        else
+        {
+            if(askGuardar() != -1){
+                if(abrirDialog()){
+                    String texto = accEditor.Open();
+                    if(texto != null){
+                        String parsear = accEditor.getRuta();
+                        if(parsear.contains(".gk"))
+                        {
+                            this.crear(".gk");
+                        }
+                        else
+                        {
+                            this.crear(".hk");
+                        }
+                        actual = (Tabs)this.TabControl.getSelectedComponent();
+                        actual.rsta.setText(texto);
+                        actual.setRuta(accEditor.getRuta());
+                        int index = TabControl.getSelectedIndex();
+                        TabControl.setTitleAt(index, actual.getName());
                         JOptionPane.showMessageDialog(null,"EL ARCHIVO SE ABRIO CON EXITO","Abrir",JOptionPane.INFORMATION_MESSAGE);
                     } 
                     else{
@@ -743,14 +801,12 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
            if(mnuGuardar.isEnabled()){
             if(accEditor.fichero == null){
                 if(guardarComoDialog()){
-                    onGuardar(false);
                     return true;
                 }else{
                     return false;
                 }
             }else{
                 if(accEditor.Guardar(actual.rsta.getText())){
-                    onGuardar(false);
                     return true;
                 }else{
                     return false;
@@ -944,12 +1000,12 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
         
     }
      
-    private String parsearCSV()
+    private String parsearCSV(String ruta)
     {
         FileReader fr=null;
         String cadena=""; 
         try{    
-            File archivo = new File ("C:\\Users\\Kristhal\\Documents\\Proyecto1\\Prueba.csv");
+            File archivo = new File (ruta);
             fr = new FileReader (archivo);
             BufferedReader br = new BufferedReader(fr);
             String linea;
@@ -989,4 +1045,33 @@ public class Principal extends javax.swing.JFrame implements KeyListener{
             setDefaultCloseOperation(this.EXIT_ON_CLOSE);
         }
     }    
+
+    private void soloGuardar() {
+        Tabs actual = (Tabs)this.TabControl.getSelectedComponent();
+        if(actual!=null)
+        {
+            if(actual.getRuta()!=null || !actual.getRuta().equals("")){
+                FileWriter fichero = null;
+                PrintWriter pw = null;
+                try
+                {
+                    fichero = new FileWriter(actual.getRuta());
+                    pw = new PrintWriter(fichero);
+                    pw.write(actual.rsta.getText());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                   try {
+                   // Nuevamente aprovechamos el finally para 
+                   // asegurarnos que se cierra el fichero.
+                   if (null != fichero)
+                      fichero.close();
+                   } catch (Exception e2) {
+                      e2.printStackTrace();
+                   }
+                }
+                JOptionPane.showMessageDialog(null,"El Archivo con ruta "+actual.getRuta()+" se guardo con exito.","Guardar",JOptionPane.INFORMATION_MESSAGE);
+            }
+        }
+    }
 }

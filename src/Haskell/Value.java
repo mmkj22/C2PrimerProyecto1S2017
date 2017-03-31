@@ -236,10 +236,16 @@ public class Value implements Cloneable{
         boolean par;
         if(this.dimensiones>1)
         {
-            for(int k=0; k<dimensiones; k=k+2)
+            List<Value> elementos = new ArrayList();
+            for(int k=0; k<dimensiones; k++)
             {
-                valor.addElemento(this.elementosArreglo.get(k));
+                Value val = this.elementosArreglo.get(k).parArreglo();
                 contador++;
+                elementos.add(val);
+            }
+            for(int i=0; i<elementos.size();i++)
+            {
+                valor.elementosArreglo.add(elementos.get(i));
             }
             valor.setIsArreglo(true);
             valor.setDimensiones(contador);
@@ -251,9 +257,13 @@ public class Value implements Cloneable{
         {
             if(this.tipo.equals("numero"))
             {
-                for(int i=0; i<this.elementosArreglo.size(); i=i+2)
+                for(int i=0; i<this.elementosArreglo.size(); i++)
                 {
-                    valor.addElemento(elementosArreglo.get(i));
+                    par = this.esPar((Double)elementosArreglo.get(i).getVal());
+                    if(par)
+                    {
+                        valor.addElemento(elementosArreglo.get(i));
+                    }
                 }
                 valor.setIsArreglo(true);
                 valor.setDimensiones(1);
@@ -264,9 +274,14 @@ public class Value implements Cloneable{
             }
             else if(this.tipo.equals("cadena")|| this.tipo.equals("caracter"))
             {
-                for(int i=0; i<this.elementosArreglo.size(); i=i+2)
+                for(int i=0; i<this.elementosArreglo.size(); i++)
                 {
-                    valor.addElemento(elementosArreglo.get(i));
+                    double res = (Character) elementosArreglo.get(i).getVal() *1;
+                    par = this.esPar(res);
+                    if(par)
+                    {
+                        valor.addElemento(elementosArreglo.get(i));
+                    }
                 }
                 valor.setIsArreglo(true);
                 valor.setDimensiones(1);
@@ -285,40 +300,56 @@ public class Value implements Cloneable{
         int contador=1;
         if(this.dimensiones>1)
         {
-            for(int k=1; k<dimensiones; k=k+2)
+           List<Value> elementos = new ArrayList();
+            for(int k=0; k<dimensiones; k++)
             {
-                valor.addElemento(this.elementosArreglo.get(k));
+                Value val = this.elementosArreglo.get(k).imparArreglo();
                 contador++;
+                elementos.add(val);
+            }
+            for(int i=0; i<elementos.size();i++)
+            {
+                valor.elementosArreglo.add(elementos.get(i));
             }
             valor.setIsArreglo(true);
             valor.setDimensiones(contador);
             valor.setTipo(tipo);
             valor.setImprimirPantalla(valor.imprimirArreglo());
             return valor;
-           
         }
         else
         {
             if(this.tipo.equals("numero"))
             {
-                for(int i=1; i<this.elementosArreglo.size(); i=i+2)
+                for(int i=0; i<this.elementosArreglo.size(); i++)
                 {
-                    valor.addElemento(elementosArreglo.get(i));
+                    impr = this.esImpar((Double)elementosArreglo.get(i).getVal());
+                    if(impr)
+                    {
+                        valor.addElemento(elementosArreglo.get(i));
+                    }
                 }
                 valor.setIsArreglo(true);
                 valor.setDimensiones(1);
+                valor.setTipo("numero");
                 valor.setImprimirPantalla(valor.imprimirArreglo());
                 return valor;
                 
             }
             else if(this.tipo.equals("cadena")|| this.tipo.equals("caracter"))
             {
-                for(int i=1; i<this.elementosArreglo.size(); i=i+2)
+                for(int i=0; i<this.elementosArreglo.size(); i++)
                 {
-                    valor.addElemento(elementosArreglo.get(i));
+                    double res = (Character) elementosArreglo.get(i).getVal() *1;
+                    impr = this.esImpar(res);
+                    if(impr)
+                    {
+                        valor.addElemento(elementosArreglo.get(i));
+                    }
                 }
                 valor.setIsArreglo(true);
                 valor.setDimensiones(1);
+                valor.setTipo(tipo);
                 valor.setImprimirPantalla(valor.imprimirArreglo());
                 return valor;
             }

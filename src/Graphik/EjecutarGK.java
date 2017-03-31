@@ -2564,7 +2564,32 @@ public class EjecutarGK {
         }
         else if(nodo.valor.equals("ACCESOBJ"))
         {
+            System.out.println("EX: Entro Acceso a Objeto, variable");
+            int size = nodo.hijos.get(1).hijos.size();
+            if(nodo.hijos.get(1).hijos.get(size-1).valor.equalsIgnoreCase("LLAMAR_MET"))
+            {
+                return null;
+            }
+            temp1=this.accesoObjetos(ambito, nodo);
+            if(temp1==null)
+            {
+                return null;
+            }
             
+        }
+        else if(nodo.valor.equals("ACCESOBJ_LLAMADA"))
+        {
+            System.out.println("EX: Entro Acceso a Objeto, Llamada a Metodo");
+            int size = nodo.hijos.get(1).hijos.size();
+            if(!nodo.hijos.get(1).hijos.get(size-1).valor.equalsIgnoreCase("LLAMAR_MET"))
+            {
+                return null;
+            }
+            temp1=this.accesoObjetos(ambito, nodo);
+            if(temp1==null)
+            {
+                return null;
+            }
         }
         else if(nodo.valor.equalsIgnoreCase("AccesoArreglo"))
         {
@@ -2716,7 +2741,7 @@ public class EjecutarGK {
             default:
                 clase = (ClaseGK)var.getValor();
                 content = new Resultado(var.getTipoVariable(), clase);
-                content.value="esId";
+                content.value="esObj";
                 content.id_result=var.getId();
                 return content;
         }
@@ -2825,7 +2850,7 @@ public class EjecutarGK {
                             }
                             else
                             {
-                            
+                                //AQUI NO SE HACE NADA PORQUE SOLO ES DECLARACION DE VARIABLES Y YA DECLARE LAS LOCALES.
                             }
                         }
                         else if(x.valor.equalsIgnoreCase("DECLARA_ARR"))
@@ -2860,7 +2885,7 @@ public class EjecutarGK {
                             System.out.println("EJ: Entro a Declaracion y Asignacion de Objeto");
                             if((boolean)bandera.peek())
                             {
-                                
+                                //AGREGAR A TABLA DE SIMBOLOS Y ASIGNARLE SU VALOR
                             }
                             else
                             {
@@ -2872,7 +2897,7 @@ public class EjecutarGK {
                             System.out.println("EJ: Entro a Declara Asigna Arreglo");
                             if((boolean)bandera.peek())
                             {
-                                
+                                //AGREGAR A TABLA DE SIMBOLOS Y ASIGNAR VALORES
                             }
                             else
                             {
@@ -2891,11 +2916,11 @@ public class EjecutarGK {
                         }
                         else if(x.valor.equalsIgnoreCase("ASIG_OBJ"))
                         {
-                        
+                            //CUANDO SOLO ES ASIGNACION DE UNA INSTANCIA
                         }
                         else if(x.valor.equalsIgnoreCase("ASIG_ACCESOBJ"))
                         {
-                        
+                            //cuando tengo esto hola.a = 23?
                         }
                         else if(x.valor.equalsIgnoreCase("ASIGNA_ARR"))
                         {
@@ -2996,7 +3021,33 @@ public class EjecutarGK {
                         }
                         else if(x.valor.equalsIgnoreCase("ACCESOBJ"))
                         {
-                        
+                            //CUANDO VOY A LLAMAR A UN METODO DE UN OBJETO
+                            System.out.println("EX: Entro Acceso a Objeto, variable");
+                            int size = x.hijos.get(1).hijos.size();
+                            if(x.hijos.get(1).hijos.get(size-1).valor.equalsIgnoreCase("LLAMAR_MET"))
+                            {
+                                return;
+                            }
+                            aux3=this.accesoObjetos(ambito, x);
+                            if(aux3==null)
+                            {
+                                return;
+                            }
+                        }
+                        else if(x.valor.equalsIgnoreCase("ACCESOBJ_LLAMADA"))
+                        {
+                            //CUANDO VOY A LLAMAR A UN METODO DE UN OBJETO
+                            System.out.println("EX: Entro Acceso a Objeto, Llamada a Metodo");
+                            int size = x.hijos.get(1).hijos.size();
+                            if(!x.hijos.get(1).hijos.get(size-1).valor.equalsIgnoreCase("LLAMAR_MET"))
+                            {
+                                return;
+                            }
+                            aux3=this.accesoObjetos(ambito, x);
+                            if(aux3==null)
+                            {
+                                return;
+                            }
                         }
                         else if(x.valor.equalsIgnoreCase("GRAFICAR"))
                         {
@@ -3624,6 +3675,9 @@ public class EjecutarGK {
         }
         while(aux1.valBool)
         {
+            this.bandera.push(true);
+            List<String> olista = new ArrayList();
+            this.variables.push(olista);
             this.recorrido(ambito, nodo.hijos.get(3));
             if(romper)
             {
@@ -3658,6 +3712,9 @@ public class EjecutarGK {
             {
                 return;
             }
+            this.borrarVariables(ambito);
+            this.variables.pop();
+            this.bandera.pop();
         }
         this.borrarVariables(ambito);
         this.variables.pop();
@@ -3809,6 +3866,8 @@ public class EjecutarGK {
         }
         Resultado parametro = null;
         try {
+                ClonarCosas clonar = new ClonarCosas();    
+                //metodo = clonar.clonarMetodoRecursivo(existeMetodo(ambito, idmetodo).clone());
                 metodo = existeMetodo(ambito, idmetodo).clone();
                 if(metodo==null)
                 {
@@ -3879,7 +3938,9 @@ public class EjecutarGK {
                     metodo.setRetorno(new Resultado("caracter", valorRetorno.valChar));
                     break;
                 default:
-                    metodo.setRetorno(valorRetorno);
+                    Resultado res = new Resultado(valorRetorno.tipogk,valorRetorno.valObj);
+                    res.id_result="obj";
+                    metodo.setRetorno(res);    
                     break;
             }
             return valorRetorno;
@@ -3890,7 +3951,7 @@ public class EjecutarGK {
         }
         return null;
     }
-    
+
     
     private MetodoGK existeMetodo(String ambito, String nombre)
     {
@@ -4737,6 +4798,17 @@ public class EjecutarGK {
                             return;
                         }
                         this.asignacionGlobales(asignacion.getVarGlobales(), asignacion.getNodo());
+                        if(clase.getHereda()!=null)
+                        {
+                            ClaseGK hereda;
+                            hereda = clonar.clonarClase(clase.getHereda().clone());
+                            if(hereda == null)
+                            {
+                                return;
+                            }
+                            this.asignacionGlobales(hereda.getVarGlobales(), hereda.getNodo());
+                            asignacion.setHereda(hereda);
+                        }
                         variable.setValor(asignacion);
                         }catch(CloneNotSupportedException ex)
                         {
@@ -4759,8 +4831,157 @@ public class EjecutarGK {
             {
                 return true;
             }
+            else if(ubicacion[0].equalsIgnoreCase(name))
+            {
+                return true;
+            }
         }
         return false;
     }
+
+    private Resultado accesoObjetos(String ambito, NodoGK nodo) {
+        Resultado content;
+        SimboloGK simGeneral;
+        simGeneral = this.existeVariable(ambito, nodo.hijos.get(0));
+        if(simGeneral==null)
+        {
+            return null;
+        }
+        if(simGeneral.getRol().equalsIgnoreCase("obj"))
+        {
+            int pos = 0;
+            content = this.accesarRecursivo((ClaseGK)simGeneral.getValor(), nodo.hijos.get(1), pos, ambito);
+            if(content==null)
+            {
+                return null;
+            }
+            return content;
+        }
+        return null;
+    }
     
+    private Resultado accesarRecursivo(ClaseGK clase , NodoGK nodo, int pos, String ambito)
+    {
+        Resultado content;
+        SimboloGK simGeneral;
+        MetodoGK metodo;
+        if(pos<nodo.hijos.size()){
+            if(nodo.hijos.get(pos).valor.equalsIgnoreCase("LLAMAR_MET"))
+            {
+                metodo = existeMetodo(clase, nodo.hijos.get(pos));
+                if(metodo==null)
+                {
+                    return null;
+                }
+                content = this.hacerLlamada(nodo.hijos.get(pos), ambito);
+                if(content==null)
+                {
+                    return null;
+                }
+                if(content.value.equals("esObj"))
+                {
+                    pos=pos+1;
+                    content = this.accesarRecursivo(content.valObj, nodo, pos, content.tipogk);
+                    if(content==null)
+                    {
+                        return null;
+                    }
+                    return content;
+                }
+            }
+            else
+            {
+                simGeneral = existeVariable(clase, nodo.hijos.get(pos));
+                if(simGeneral==null)
+                {
+                    return null;
+                }
+                if(simGeneral.getRol().equalsIgnoreCase("obj"))
+                {
+                    this.accesarRecursivo((ClaseGK)simGeneral.getValor(), nodo, pos++, ambito);
+                }
+                else
+                {
+                    return (Resultado)simGeneral.getValor();
+                }
+            }
+        }
+        else{
+            //ERROR
+        }
+        return null;
+    }
+    
+    private SimboloGK existeVariable(ClaseGK clase, NodoGK nodo)
+    {
+        SimboloGK simGeneral;
+        if(clase.varGlobales.containsKey(nodo.valor))
+        {
+            simGeneral=clase.varGlobales.get(nodo.valor);
+            if(simGeneral==null)
+            {
+                return null;
+            }
+            if(simGeneral.getVisibilidad().equalsIgnoreCase("publico") || simGeneral.getVisibilidad().equalsIgnoreCase("protegido"))
+            {
+                return simGeneral;
+            }
+        }
+        else
+        {
+            if(clase.getHereda().varGlobales.containsKey(nodo.valor))
+            {
+                simGeneral=clase.getHereda().varGlobales.get(nodo.valor);
+                if(simGeneral==null)
+                {
+                    return null;
+                }
+                if(simGeneral.getVisibilidad().equalsIgnoreCase("publico") || simGeneral.getVisibilidad().equalsIgnoreCase("protegido"))
+                {
+                    return simGeneral;
+                }
+            }
+        }
+        return null;
+    }
+    
+    private MetodoGK existeMetodo(ClaseGK clase, NodoGK nodo)
+    {
+        MetodoGK metodo;
+        List<Resultado> parametros = new ArrayList();
+        String cadena = sacarParametros(clase.getId(), parametros, nodo);
+        String idmetodo=nodo.hijos.get(0).valor;
+        if(!cadena.equals(""))
+        {
+            idmetodo+=cadena;
+        }
+        if(clase.metodos.containsKey(idmetodo))
+        {
+            metodo = clase.metodos.get(idmetodo);
+            if(metodo==null)
+            {
+                return null;
+            }
+            if(metodo.getVisibilidad().equalsIgnoreCase("publico") || metodo.getVisibilidad().equalsIgnoreCase("protegido"))
+            {
+                return metodo;
+            }
+        }
+        else
+        {
+            if(clase.getHereda().metodos.containsKey(idmetodo))
+            {
+                metodo=clase.getHereda().metodos.get(idmetodo);
+                if(metodo==null)
+                {
+                    return null;
+                }
+                if(metodo.getVisibilidad().equalsIgnoreCase("publico") || metodo.getVisibilidad().equalsIgnoreCase("protegido"))
+                {
+                    return metodo;
+                }
+            }
+        }
+        return null;
+    }
 }

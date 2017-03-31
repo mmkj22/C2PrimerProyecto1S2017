@@ -43,6 +43,7 @@ public class Tabs extends JPanel {
     public Tabs(String tipo)
     {
         this.setLayout(new BorderLayout());
+        this.tipo=tipo;
         if(tipo.equalsIgnoreCase(".gk"))
         {
             AbstractTokenMakerFactory atmf = (AbstractTokenMakerFactory) TokenMakerFactory.getDefaultInstance();
@@ -93,11 +94,7 @@ public class Tabs extends JPanel {
             scheme.getStyle(Token.LITERAL_NUMBER_FLOAT).foreground= Color.MAGENTA;
             scheme.getStyle(Token.LITERAL_CHAR).foreground= Color.PINK;
             scheme.getStyle(Token.RESERVED_WORD_2).foreground= Color.RED;
-            
-//            JScrollPane panel = new JScrollPane(txtEntrada);
-//            TextLineNumber tln = new TextLineNumber(txtEntrada);
-//            panel.setRowHeaderView(tln);
-//            this.add(panel,BorderLayout.CENTER);
+
         }
     }
     
@@ -115,6 +112,12 @@ public class Tabs extends JPanel {
 
     public void setRuta(String ruta) {
         this.ruta = ruta;
+        this.setName(this.parsearRuta(ruta));
     }
     
+    private String parsearRuta(String cadena) {
+        String[] parRuta = cadena.split("\\\\");
+        String path = parRuta[parRuta.length-1];
+        return path;
+    }
 }

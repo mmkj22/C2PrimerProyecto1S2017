@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,6 +41,7 @@ public class RecorridoAST{
     List<Integer> linea;
     List<Integer> columna;
     List<String> imports;
+    Stack stackImports = new Stack();
     int contParametros = 0;
     ClaseGK clase;
     MetodoGK nuevoMetodo;
@@ -53,6 +55,7 @@ public class RecorridoAST{
         lista_vis = new ArrayList();
         linea = new ArrayList();
         columna = new ArrayList();
+        stackImports.push(new ArrayList());
     }
     
     public void primeraPasada(String ruta, String name) throws CloneNotSupportedException {
@@ -67,9 +70,9 @@ public class RecorridoAST{
     private void listaImports(NodoGK n, String nombre) {
         String aux = "";
         String path;
-        imports = new ArrayList();
         if (n != null) {
             if (n.hijos.size() > 0) {
+                imports = new ArrayList();
                 for (NodoGK t : n.hijos) {
                     if (this.rutaOficial != null) {
                         aux = t.valor;
@@ -80,14 +83,15 @@ public class RecorridoAST{
                         if (f.exists()) {
                             System.out.println("Se encontro el archivo");
                             this.parsearExt(path, aux);
+                            imports.add(t.valor.replace(".gk", ""));
                         } else {
                             JOptionPane.showMessageDialog(null, "El Archivo " + aux + " no se encuentra en la carpeta", "Imports", JOptionPane.INFORMATION_MESSAGE);
                         }
                     } else {
                         JOptionPane.showMessageDialog(null, "Guarde el archivo antes de compilarlo debido a que no se encuentra una ruta para buscar los Imports", "Imports", JOptionPane.INFORMATION_MESSAGE);
                     }
-                    imports.add(t.valor.replace(".gk", ""));
                 }
+                stackImports.push(imports);
             }
         }
     }
@@ -140,7 +144,8 @@ public class RecorridoAST{
                 claseActual = nodo.hijos.get(0).valor;
                 clase.setNodo(nodo.hijos.get(2));
                 clase.setLlamadasHK(llamadasHK);
-                clase.setImports(imports);
+                clase.setImports((List<String>)stackImports.peek());
+                stackImports.pop();
                 pasada1("", nodo.hijos.get(2));
                 RecorridoAST.listaClases.put(clase.getId(), clase);
                 contador++;
@@ -159,7 +164,8 @@ public class RecorridoAST{
                     clase.setHereda(listaClases.get(nodo.hijos.get(1).valor).clone());
                     clase.getHereda().setId(nodo.hijos.get(0).valor);
                     clase.setLlamadasHK(llamadasHK);
-                    clase.setImports(imports);
+                    clase.setImports((List<String>)stackImports.peek());
+                    stackImports.pop();
                     pasada1("",nodo.hijos.get(3));
                     RecorridoAST.listaClases.put(clase.getId(), clase);
                 }

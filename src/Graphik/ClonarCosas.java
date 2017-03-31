@@ -142,7 +142,6 @@ public class ClonarCosas {
                 }
                 return content;
             default:
-                clase = (ClaseGK)var.getValor();
                 content = new Resultado(var.getTipoVariable(), new ClaseGK());
                 content.value="esId";
                 content.id_result=var.getId();
@@ -186,5 +185,159 @@ public class ClonarCosas {
             }
         }
         return varLocales;
+    }
+    
+        public Map<String, SimboloGK> clonarParametrosCompleto(Map<String, SimboloGK> lstparametros)
+    {
+        Map<String, SimboloGK> parametros = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        Iterator it = lstparametros.keySet().iterator();
+        while(it.hasNext()){
+            String key = (String)it.next();
+            System.out.println("Esto trae la key: "+key);
+            try {
+                SimboloGK simGeneral = lstparametros.get(key).clone();
+                Resultado res = reiniciarResultadoCompleto(simGeneral);
+                simGeneral.setValor(res);
+                parametros.put(key, simGeneral);
+            } catch (CloneNotSupportedException ex) {
+                Logger.getLogger(ClonarCosas.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        return parametros;
+    }
+    
+    public Map<String, SimboloGK> clonarLocalesCompleto(Map<String, SimboloGK> locales)
+    {
+        Map<String, SimboloGK> varLocales = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        Iterator it = locales.keySet().iterator();
+        while(it.hasNext()){
+            String key = (String)it.next();
+            System.out.println("Esto trae la key: "+key);
+            try {
+                SimboloGK simGeneral = locales.get(key).clone();
+                Resultado res = reiniciarResultadoCompleto(simGeneral);
+                simGeneral.setValor(res);
+                varLocales.put(key, simGeneral);
+            } catch (CloneNotSupportedException ex) {
+                Logger.getLogger(ClonarCosas.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        return varLocales;
+    }
+    
+    public MetodoGK clonarMetodoRecursivo(MetodoGK metodo)
+    {
+        Map<String, SimboloGK> parametros = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        parametros = clonarParametrosCompleto(metodo.parametros);
+        Map<String, SimboloGK> varLocales = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        varLocales = clonarLocalesCompleto(metodo.varLocales);
+        metodo.parametros=parametros;
+        metodo.varLocales=varLocales;
+        return metodo;
+    }
+    
+        public Resultado reiniciarResultadoCompleto(SimboloGK var)
+    {
+        Resultado content;
+        Resultado result;
+        ClaseGK clase;
+        String tipo;
+        switch(var.getTipoVariable())
+        {
+            case "entero":
+                tipo = var.getValor().getClass().getSimpleName();
+                if(tipo.equalsIgnoreCase("Integer"))
+                {
+                    content = new Resultado(var.getTipoVariable(), var.getValor());
+                    return content;
+                }
+                else
+                {
+                    try {
+                        result = (Resultado)var.getValor();
+                        content = result.clone();
+                        return content;
+                    } catch (CloneNotSupportedException ex) {
+                        Logger.getLogger(ClonarCosas.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            case "decimal":
+                tipo = var.getValor().getClass().getSimpleName();
+                if(tipo.equalsIgnoreCase("Double"))
+                {
+                    content = new Resultado(var.getTipoVariable(), var.getValor());
+                    return content;
+                }
+                else
+                {
+                    try {
+                        result = (Resultado)var.getValor();
+                        content = result.clone();
+                        return content;
+                    } catch (CloneNotSupportedException ex) {
+                        Logger.getLogger(ClonarCosas.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+                
+            case "bool":
+                tipo = var.getValor().getClass().getSimpleName();
+                if(tipo.equalsIgnoreCase("Boolean"))
+                {
+                    content = new Resultado(var.getTipoVariable(), var.getValor());
+                    return content; 
+                    
+                }
+                else
+                {
+                    try {
+                        result = (Resultado)var.getValor();
+                        content = result.clone();
+                        return content;
+                    } catch (CloneNotSupportedException ex) {
+                        Logger.getLogger(ClonarCosas.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            case "cadena":
+                tipo = var.getValor().getClass().getSimpleName();
+                if(tipo.equalsIgnoreCase("String"))
+                {
+                    content = new Resultado(var.getTipoVariable(), var.getValor());
+                    return content; 
+                }
+                else
+                {
+                    try {
+                        result = (Resultado)var.getValor();
+                        content = result.clone();
+                        return content;
+                    } catch (CloneNotSupportedException ex) {
+                        Logger.getLogger(ClonarCosas.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+                
+            case "caracter":
+                tipo = var.getValor().getClass().getSimpleName();
+                if(tipo.equalsIgnoreCase("Character"))
+                {
+                    content = new Resultado(var.getTipoVariable(), var.getValor());
+                    return content; 
+                }
+                else
+                {
+                    try {
+                        result = (Resultado)var.getValor();
+                        content = result.clone();
+                        return content;
+                    } catch (CloneNotSupportedException ex) {
+                        Logger.getLogger(ClonarCosas.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            default:
+                clase = (ClaseGK)var.getValor();
+                content = new Resultado(var.getTipoVariable(), new ClaseGK());
+                content.value="esObj";
+                content.id_result=var.getId();
+                return content;
+        }
     }
 }
