@@ -5,6 +5,7 @@
  */
 package Haskell;
 
+import Errores.Errores;
 import java.util.Hashtable;
 import java.util.Stack;
 import java.math.*;
@@ -35,6 +36,7 @@ public class EjecucionHK {
     Value arregloInit= new Value();
     int dimensiones=0;
     int total=0;
+    private Errores err = Errores.getInstance();
     
             
     public EjecucionHK(NodoHK root, JTextArea txtConsola)
@@ -65,6 +67,7 @@ public class EjecucionHK {
             temp2=this.evaluarExpresion(ambito, nodo.hijos.get(1));
             if(temp1==null || temp2==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.getTipo().equals("numero") && temp2.getTipo().equals("numero"))
@@ -75,6 +78,7 @@ public class EjecucionHK {
             }
             else
             {
+                err.nuevoError("No se pueden sumar los tipos "+temp1.tipo+" y "+ temp2.tipo);
                 //ERROR
                 return null;
             }
@@ -86,6 +90,7 @@ public class EjecucionHK {
                 temp2=this.evaluarExpresion(ambito, nodo.hijos.get(1));
                 if(temp1==null || temp2==null)
                 {
+                    err.nuevoError("Expresion Invalida");
                     return null;
                 }
                 if(temp1.getTipo().equals("numero") && temp2.getTipo().equals("numero"))
@@ -97,6 +102,7 @@ public class EjecucionHK {
                 else
                 {
                     //ERROR
+                    err.nuevoError("No se pueden sumar los tipos "+temp1.tipo+" y "+ temp2.tipo);
                     return null;
                 }
             }
@@ -105,6 +111,7 @@ public class EjecucionHK {
                 temp1=this.evaluarExpresion(ambito,nodo.hijos.get(0));
                 if(temp1==null)
                 {
+                    err.nuevoError("Expresion Invalida");
                     return null;
                 }
                 if(temp1.getTipo().equals("numero"))
@@ -116,6 +123,7 @@ public class EjecucionHK {
                 else
                 {
                     //Error
+                    err.nuevoError("No se pueden poner negativos los tipos "+temp1.tipo);
                     return null;
                 }
             }
@@ -126,6 +134,7 @@ public class EjecucionHK {
             temp2=this.evaluarExpresion(ambito, nodo.hijos.get(1));
             if(temp1==null || temp2==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.getTipo().equals("numero") && temp2.getTipo().equals("numero"))
@@ -137,6 +146,7 @@ public class EjecucionHK {
             else
             {
                 //ERROR
+                err.nuevoError("No se pueden multiplicar los tipos "+temp1.tipo+" y "+ temp2.tipo);
                 return null;
             }
         }
@@ -146,6 +156,7 @@ public class EjecucionHK {
             temp2=this.evaluarExpresion(ambito, nodo.hijos.get(1));
             if(temp1==null || temp2==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.getTipo().equals("numero") && temp2.getTipo().equals("numero"))
@@ -157,6 +168,7 @@ public class EjecucionHK {
             else
             {
                 //ERROR
+                err.nuevoError("No se pueden dividir los tipos "+temp1.tipo+" y "+ temp2.tipo);
                 return null;
             }
         }
@@ -166,6 +178,7 @@ public class EjecucionHK {
             temp2=this.evaluarExpresion(ambito, nodo.hijos.get(1));
             if(temp1==null || temp2==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.getTipo().equals("numero") && temp2.getTipo().equals("numero"))
@@ -177,6 +190,7 @@ public class EjecucionHK {
             else
             {
                 //ERROR
+                err.nuevoError("No se puede hacer modularidad en los tipos "+temp1.tipo+" y "+ temp2.tipo);
                 return null;
             } 
         }
@@ -186,6 +200,7 @@ public class EjecucionHK {
             temp2=this.evaluarExpresion(ambito, nodo.hijos.get(1));
             if(temp1==null || temp2==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.getTipo().equals("numero") && temp2.getTipo().equals("numero"))
@@ -197,6 +212,7 @@ public class EjecucionHK {
             else
             {
                 //ERROR
+                err.nuevoError("No se puede hacer potencia en  los tipos "+temp1.tipo+" y "+ temp2.tipo);
                 return null;
             }        
         }
@@ -206,6 +222,7 @@ public class EjecucionHK {
             temp2=this.evaluarExpresion(ambito, nodo.hijos.get(0));
             if(temp1==null || temp2==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.getTipo().equals("numero") && temp2.getTipo().equals("numero"))
@@ -217,6 +234,7 @@ public class EjecucionHK {
             else
             {
                 //ERROR
+                err.nuevoError("No se puede sacar raiz a los tipos "+temp1.tipo+" y "+ temp2.tipo);
                 return null;
             }              
         }
@@ -227,6 +245,7 @@ public class EjecucionHK {
             temp2 = this.evaluarExpresion(ambito, nodo.hijos.get(1));
             if (temp1 == null || temp2 == null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.getTipo().equals("numero") && temp2.getTipo().equals("numero"))
@@ -244,7 +263,7 @@ public class EjecucionHK {
                     return content;
                 }
             }
-            if(temp1.getTipo().equals("cadena") && temp2.getTipo().equals("cadena"))
+            else if(temp1.getTipo().equals("cadena") && temp2.getTipo().equals("cadena"))
             {
                 int Resultado = temp1.getVal().toString().compareTo((String)temp2.getVal());
                 if(Resultado<=0)
@@ -259,6 +278,11 @@ public class EjecucionHK {
                     content.setVal(false);
                     return content;
                 }
+            }
+            else
+            {
+                err.nuevoError("No se pueden comparar menor igual los tipos "+temp1.tipo+" y "+ temp2.tipo);
+                return null;
             }
         }
         
@@ -285,7 +309,7 @@ public class EjecucionHK {
                     return content;
                 }
             }
-            if(temp1.getTipo().equals("cadena") && temp2.getTipo().equals("cadena"))
+            else if(temp1.getTipo().equals("cadena") && temp2.getTipo().equals("cadena"))
             {
                 int Resultado = temp1.getVal().toString().compareTo((String)temp2.getVal());
                 if(Resultado>=0)
@@ -300,7 +324,12 @@ public class EjecucionHK {
                     content.setVal(false);
                     return content;
                 }
-            }        
+            }   
+            else
+            {
+                err.nuevoError("No se pueden comparar mayor igual los tipos "+temp1.tipo+" y "+ temp2.tipo);
+                return null;
+            }
         }
         else if(nodo.valor.equals("menor"))
         {
@@ -308,6 +337,7 @@ public class EjecucionHK {
             temp2 = this.evaluarExpresion(ambito, nodo.hijos.get(1));
             if (temp1 == null || temp2 == null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.getTipo().equals("numero") && temp2.getTipo().equals("numero"))
@@ -325,7 +355,7 @@ public class EjecucionHK {
                     return content;
                 }
             }
-            if(temp1.getTipo().equals("cadena") && temp2.getTipo().equals("cadena"))
+            else if(temp1.getTipo().equals("cadena") && temp2.getTipo().equals("cadena"))
             {
                 int Resultado = temp1.getVal().toString().compareTo((String)temp2.getVal());
                 if(Resultado<0)
@@ -340,7 +370,12 @@ public class EjecucionHK {
                     content.setVal(false);
                     return content;
                 }
-            }        
+            }  
+            else
+            {
+                err.nuevoError("No se pueden comparar menor los tipos "+temp1.tipo+" y "+ temp2.tipo);
+                return null;
+            }
         }
         else if(nodo.valor.equals("mayor"))
         {
@@ -348,6 +383,7 @@ public class EjecucionHK {
             temp2 = this.evaluarExpresion(ambito, nodo.hijos.get(1));
             if (temp1 == null || temp2 == null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.getTipo().equals("numero") && temp2.getTipo().equals("numero"))
@@ -365,7 +401,7 @@ public class EjecucionHK {
                     return content;
                 }
             }
-            if(temp1.getTipo().equals("cadena") && temp2.getTipo().equals("cadena"))
+            else if(temp1.getTipo().equals("cadena") && temp2.getTipo().equals("cadena"))
             {
                 int Resultado = temp1.getVal().toString().compareTo((String)temp2.getVal());
                 if(Resultado>0)
@@ -380,7 +416,12 @@ public class EjecucionHK {
                     content.setVal(false);
                     return content;
                 }
-            }        
+            }  
+            else
+            {
+                err.nuevoError("No se pueden comparar mayor los tipos "+temp1.tipo+" y "+ temp2.tipo);
+                return null;
+            }
         }
         else if(nodo.valor.equals("diferente"))
         {
@@ -388,6 +429,7 @@ public class EjecucionHK {
             temp2 = this.evaluarExpresion(ambito, nodo.hijos.get(1));
             if (temp1 == null || temp2 == null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.getTipo().equals("numero") && temp2.getTipo().equals("numero"))
@@ -406,7 +448,7 @@ public class EjecucionHK {
                     return content;
                 }
             }
-            if(temp1.getTipo().equals("cadena") && temp2.getTipo().equals("cadena"))
+            else if(temp1.getTipo().equals("cadena") && temp2.getTipo().equals("cadena"))
             {
                 int Resultado = temp1.getVal().toString().compareTo((String)temp2.getVal());
                 if(Resultado!=0)
@@ -421,7 +463,12 @@ public class EjecucionHK {
                     content.setVal(false);
                     return content;
                 }
-            }        
+            }  
+            else
+            {
+                err.nuevoError("No se pueden comparar diferente los tipos "+temp1.tipo+" y "+ temp2.tipo);
+                return null;
+            }
         }
         else if(nodo.valor.equals("igualacion"))
         {
@@ -429,6 +476,7 @@ public class EjecucionHK {
             temp2 = this.evaluarExpresion(ambito, nodo.hijos.get(1));
             if (temp1 == null || temp2 == null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.getTipo().equals("numero") && temp2.getTipo().equals("numero"))
@@ -446,7 +494,7 @@ public class EjecucionHK {
                     return content;
                 }
             }
-            if(temp1.getTipo().equals("cadena") && temp2.getTipo().equals("cadena"))
+            else if(temp1.getTipo().equals("cadena") && temp2.getTipo().equals("cadena"))
             {
                 int Resultado = temp1.getVal().toString().compareTo((String)temp2.getVal());
                 if(Resultado==0)
@@ -461,7 +509,12 @@ public class EjecucionHK {
                     content.setVal(false);
                     return content;
                 }
-            }        
+            } 
+            else
+            {
+                err.nuevoError("No se pueden comparar igual los tipos "+temp1.tipo+" y "+ temp2.tipo);
+                return null;
+            }
         }
         //OPERACIONES LOGICAS----------------------------------------------------------------------------------------------
         else if(nodo.valor.equals("and"))
@@ -471,6 +524,7 @@ public class EjecucionHK {
             if(temp1==null || temp2==null)
             {
                 //Error
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.getTipo().equals("bool") && temp2.getTipo().equals("bool"))
@@ -491,6 +545,7 @@ public class EjecucionHK {
             else
             {
                 //ERROR
+                err.nuevoError("No se pueden comparar en expresiones logicas los tipos "+temp1.tipo+" y "+ temp2.tipo);
                 return null;
             }
         }
@@ -501,6 +556,7 @@ public class EjecucionHK {
             if(temp1==null || temp2==null)
             {
                 //Error
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.getTipo().equals("bool") && temp2.getTipo().equals("bool"))
@@ -521,6 +577,7 @@ public class EjecucionHK {
             else
             {
                 //ERROR
+                err.nuevoError("No se pueden comparar en expresiones logicas los tipos "+temp1.tipo+" y "+ temp2.tipo);
                 return null;
             }
         }
@@ -560,6 +617,7 @@ public class EjecucionHK {
             nodeTable = this.llamadaMetodo(ambito, nodo);
             if(nodeTable==null)
             {
+                err.nuevoError("No se encontro el metodo");
                 return null;
             }
             this.recorrido((String)this.ambito.peek(), nodeTable.getExp());
@@ -576,6 +634,7 @@ public class EjecucionHK {
             temp1=this.inita(ambito, nodo);
             if(temp1==null)
             {
+                err.nuevoError("No se pudo asignar la lista");
                 return null;
             }
             nodeTable=this.getUltimo();
@@ -588,6 +647,7 @@ public class EjecucionHK {
             nodeTable=this.existeVariable(ambito, nodo.hijos.get(0));
             if(nodeTable==null)
             {
+                err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "La variable "+ nodo.hijos.get(0).valor + " no ha sido declarada");
                 return null;
             }
             content=nodeTable.getVal();
@@ -599,6 +659,7 @@ public class EjecucionHK {
             temp1=this.evaluarExpresion(ambito, nodo.hijos.get(0));
             if(temp1==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.getTipo().equals("numero"))
@@ -610,6 +671,7 @@ public class EjecucionHK {
             else
             {
                 //ERROR
+                err.nuevoError("No se puede realizar succ en un tipo que no sea numerico");
                 return null;
             }
         }
@@ -618,6 +680,7 @@ public class EjecucionHK {
             temp1=this.evaluarExpresion(ambito, nodo.hijos.get(0));
             if(temp1==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.getTipo().equals("numero"))
@@ -629,6 +692,7 @@ public class EjecucionHK {
             else
             {
                 //ERROR
+                err.nuevoError("No se puede realizar succ en un tipo que no sea numerico");
                 return null;
             }
         }
@@ -637,6 +701,7 @@ public class EjecucionHK {
             temp1=this.evaluarExpresion(ambito, nodo.hijos.get(0));
             if(temp1==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.isIsArreglo())
@@ -648,6 +713,7 @@ public class EjecucionHK {
             }
             else
             {
+                err.nuevoError("No se puede realizar MIN si no es arreglo");
                 return null;
             }
         }
@@ -656,6 +722,7 @@ public class EjecucionHK {
             temp1=this.evaluarExpresion(ambito, nodo.hijos.get(0));
             if(temp1==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.isIsArreglo())
@@ -667,6 +734,7 @@ public class EjecucionHK {
             }
             else
             {
+                err.nuevoError("No se puede realizar MAX si no es arreglo");
                 return null;
             }
         }
@@ -675,6 +743,7 @@ public class EjecucionHK {
             temp1=this.evaluarExpresion(ambito, nodo.hijos.get(0));
             if(temp1==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.isIsArreglo())
@@ -686,6 +755,7 @@ public class EjecucionHK {
             }
             else
             {
+                err.nuevoError("No se puede realizar SUM si no es arreglo");
                 return null;
             }
         }
@@ -694,6 +764,7 @@ public class EjecucionHK {
             temp1=this.evaluarExpresion(ambito, nodo.hijos.get(0));
             if(temp1==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.isIsArreglo())
@@ -705,6 +776,7 @@ public class EjecucionHK {
             }
             else
             {
+                err.nuevoError("No se puede realizar PRODUCT si no es arreglo");
                 return null;
             }
         }
@@ -713,6 +785,7 @@ public class EjecucionHK {
             temp1=this.evaluarExpresion(ambito, nodo.hijos.get(0));
             if(temp1==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.isIsArreglo())
@@ -727,6 +800,7 @@ public class EjecucionHK {
             }
             else
             {
+                err.nuevoError("No se puede realizar REVERS si no es arreglo");
                 return null;
             }
         }
@@ -735,6 +809,7 @@ public class EjecucionHK {
             temp1=this.evaluarExpresion(ambito, nodo.hijos.get(0));
             if(temp1==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.isIsArreglo())
@@ -746,6 +821,7 @@ public class EjecucionHK {
             }
             else
             {
+                err.nuevoError("No se puede realizar IMPR si no es arreglo");
                 return null;
             }
         }
@@ -754,6 +830,7 @@ public class EjecucionHK {
             temp1=this.evaluarExpresion(ambito, nodo.hijos.get(0));
             if(temp1==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.isIsArreglo())
@@ -765,6 +842,7 @@ public class EjecucionHK {
             }
             else
             {
+                err.nuevoError("No se puede realizar PAR si no es arreglo");
                 return null;
             }
         }
@@ -773,6 +851,7 @@ public class EjecucionHK {
             temp1=this.evaluarExpresion(ambito, nodo.hijos.get(0));
             if(temp1==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.isIsArreglo())
@@ -787,6 +866,7 @@ public class EjecucionHK {
             }
             else
             {
+                err.nuevoError("No se puede realizar ASC si no es arreglo");
                 return null;
             }
         }
@@ -795,6 +875,7 @@ public class EjecucionHK {
             temp1=this.evaluarExpresion(ambito, nodo.hijos.get(0));
             if(temp1==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.isIsArreglo())
@@ -809,6 +890,7 @@ public class EjecucionHK {
             }
             else
             {
+                err.nuevoError("No se puede realizar DESC si no es arreglo");
                 return null;
             }
         }
@@ -817,6 +899,7 @@ public class EjecucionHK {
             temp1=this.evaluarExpresion(ambito, nodo.hijos.get(0));
             if(temp1==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.isIsArreglo())
@@ -828,6 +911,7 @@ public class EjecucionHK {
             }
             else
             {
+                err.nuevoError("No se puede realizar LENGTH si no es arreglo");
                 return null;
             }
         }
@@ -836,6 +920,7 @@ public class EjecucionHK {
             temp1=this.evaluarExpresion(ambito, nodo.hijos.get(0));
             if(temp1==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             for(NodoHK n : nodo.hijos.get(1).hijos)
@@ -843,6 +928,7 @@ public class EjecucionHK {
                 temp2=this.evaluarExpresion(ambito, n);
                 if(temp2==null)
                 {
+                    err.nuevoError("Expresion Invalida");
                     return null;
                 }
                 temp1=this.concatArreglos(temp1, temp2);
@@ -857,6 +943,7 @@ public class EjecucionHK {
             temp1=this.evaluarExpresion(ambito, nodo.hijos.get(0));
             if(temp1==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.isIsArreglo())
@@ -895,6 +982,7 @@ public class EjecucionHK {
             nodeTable=this.getUltimo();
             if(nodeTable==null)
             {
+                err.nuevoError("No se encontro el valor del ultimo");
                 return null;
             }
             nodeTable.setTipo(nodeTable.getVal().getTipo());
@@ -985,6 +1073,7 @@ public class EjecucionHK {
         }
         else
         {
+            err.nuevoError("No se puede asignar un tipo "+tipo+ " a un tipo "+valor.getTipo());
             return null;
         }
     }
@@ -1002,6 +1091,7 @@ public class EjecucionHK {
             this.actual.push(this.clonarHash(tope));
             return content;
         }
+        err.nuevoError("No se encontro el metodo "+ nombre);
         return null;
     }
     
@@ -1040,6 +1130,7 @@ public class EjecucionHK {
         {
             return registro;
         }
+        err.nuevoErrorSemantico(nodo.linea, nodo.columna, "La variable "+ nodo.valor+ " no ha sido declarada" );
         return null;
     }
     
@@ -1051,6 +1142,7 @@ public class EjecucionHK {
         {
             return registro;
         }
+        err.nuevoErrorSemantico(nodo.linea, nodo.columna, "La variable "+ nodo.valor+ " no ha sido declarada" );
         return null;
     }
     
@@ -1106,11 +1198,13 @@ public class EjecucionHK {
                     aux3=this.evaluarExpresion(ambito, x.hijos.get(1));
                     if(aux3==null)
                     {
+                        err.nuevoErrorSemantico(x.hijos.get(0).linea, x.hijos.get(0).columna, "Expresion Invalida");
                         //Error
                     }
                     aux1=this.existeVariable(ambito, x.hijos.get(0));
                     if(aux1==null)
                     {
+                        err.nuevoErrorSemantico(x.hijos.get(0).linea, x.hijos.get(0).columna, "La variable "+ x.hijos.get(0).valor+" no ha sido declarada");
                         return;
                     }
                     bien=modificarValor(aux1.getNombre(), aux3);
@@ -1148,6 +1242,7 @@ public class EjecucionHK {
                 aux1=this.llamadaMetodo(ambito,x);
                 if(aux1==null)
                 {
+                    err.nuevoError("No se pudo realizar la llamada al metodo");
                     return;
                 }
                 this.recorrido((String)this.ambito.peek(), aux1.getExp());
@@ -1164,7 +1259,7 @@ public class EjecucionHK {
                 aux3=this.evaluarExpresion(ambito, x.hijos.get(0));
                 if(aux3==null)
                 {
-                    //Error
+                    err.nuevoError("Expresion Invalida");
                     return;
                 }
                 aux3.setImprimirPantalla(String.valueOf(aux3.getVal()));
@@ -1177,11 +1272,12 @@ public class EjecucionHK {
                 aux3=this.evaluarExpresion(ambito, x.hijos.get(0));
                 if(aux3==null)
                 {
-                    //Error
+                    err.nuevoError("Expresion Invalida");
                     return;
                 }
                 if(aux3.isIsArreglo())
                 {
+                    err.nuevoError("Para una operacion SUCC se necesita que la variable sea un arreglo");
                     return;
                 }
                 aux3.setVal((Double)aux3.getVal()+1);
@@ -1197,10 +1293,12 @@ public class EjecucionHK {
                 if(aux3==null)
                 {
                     //Error
+                    err.nuevoError("Expresion Invalida");
                     return;
                 }
                 if(aux3.isIsArreglo())
                 {
+                    err.nuevoError("Para una operacion DECC se necesita que la variable sea un arreglo");
                     return;
                 }
                 aux3.setVal((Double)aux3.getVal()-1);
@@ -1215,11 +1313,13 @@ public class EjecucionHK {
                 if(aux3==null)
                 {
                     //Error
+                    err.nuevoError("Expresion Invalida");
                     return;
                 }
                 if(!aux3.isIsArreglo())
                 {
                     //ERROR
+                    err.nuevoError("Para una operacion MIN se necesita que la variable sea un arreglo");
                     return;
                 }
                 Value ret = aux3.minArreglo();
@@ -1233,11 +1333,13 @@ public class EjecucionHK {
                 if(aux3==null)
                 {
                     //Error
+                    err.nuevoError("Expresion Invalida");
                     return;
                 }
                 if(!aux3.isIsArreglo())
                 {
                     //ERROR
+                    err.nuevoError("Para una operacion MAX se necesita que la variable sea un arreglo");
                     return;
                 }
                 Value ret = aux3.maxArreglo();
@@ -1251,11 +1353,13 @@ public class EjecucionHK {
                 if(aux3==null)
                 {
                     //Error
+                    err.nuevoError("Expresion Invalida");
                     return;
                 }
                 if(!aux3.isIsArreglo())
                 {
                     //ERROR
+                    err.nuevoError("Para una operacion SUM se necesita que la variable sea un arreglo");
                     return;
                 }
                 Value ret = aux3.sumArreglo();
@@ -1269,11 +1373,13 @@ public class EjecucionHK {
                 if(aux3==null)
                 {
                     //Error
+                    err.nuevoError("Expresion Invalida");
                     return;
                 }
                 if(!aux3.isIsArreglo())
                 {
                     //ERROR
+                    err.nuevoError("Para una operacion PRODUCT se necesita que la variable sea un arreglo");
                     return;
                 }
                 Value ret = aux3.productArreglo();
@@ -1287,16 +1393,19 @@ public class EjecucionHK {
                 if(aux3==null)
                 {
                     //Error
+                    err.nuevoError("Expresion Invalida");
                     return;
                 }
                 if(!aux3.isIsArreglo())
                 {
                     //ERROR
+                    err.nuevoError("Para una operacion REVERS se necesita que la variable sea un arreglo");
                     return;
                 }
                 int res = aux3.reversArreglo();
                 if(res==0)
                 {
+                    err.nuevoError("No se pudo realizar la operacion de Reversa en el arreglo");
                     return;
                 }
                 aux1=this.getUltimo();
@@ -1309,12 +1418,15 @@ public class EjecucionHK {
                 if(aux3==null)
                 {
                     //Error
+                    err.nuevoError("Expresion Invalida");
                     return;
                 }
                 if(!aux3.isIsArreglo())
                 {
                     //ERROR
+                    err.nuevoError("Para una operacion IMPR se necesita que la variable sea un arreglo");
                     return;
+                    
                 }
                 Value ret = aux3.imparArreglo();
                 aux1=this.getUltimo();
@@ -1327,11 +1439,13 @@ public class EjecucionHK {
                 if(aux3==null)
                 {
                     //Error
+                    err.nuevoError("Expresion Invalida");
                     return;
                 }
                 if(!aux3.isIsArreglo())
                 {
                     //ERROR
+                    err.nuevoError("Para una operacion PAR se necesita que la variable sea un arreglo");
                     return;
                 }
                 Value ret = aux3.parArreglo();
@@ -1345,16 +1459,19 @@ public class EjecucionHK {
                 if(aux3==null)
                 {
                     //Error
+                    err.nuevoError("Expresion Invalida");
                     return;
                 }
                 if(!aux3.isIsArreglo())
                 {
                     //ERROR
+                    err.nuevoError("Para una operacion ASC se necesita que la variable sea un arreglo");
                     return;
                 }
                 int res = aux3.ordenarArregloAscendente();
                 if(res==0)
                 {
+                    err.nuevoError("No se pudo realizar el orden asc en el arreglo");
                     return;
                 }
                 aux1=this.getUltimo();
@@ -1367,16 +1484,19 @@ public class EjecucionHK {
                 if(aux3==null)
                 {
                     //Error
+                    err.nuevoError("Expresion Invalida");
                     return;
                 }
                 if(!aux3.isIsArreglo())
                 {
                     //ERROR
+                    err.nuevoError("Para una operacion DESC se necesita que la variable sea un arreglo");
                     return;
                 }
                 int res = aux3.ordenarArregloDescendente();
                 if(res==0)
                 {
+                    err.nuevoError("No se pudo realizar la operacion DESC en el arreglo");
                     return;
                 }
                 aux1=this.getUltimo();
@@ -1388,10 +1508,12 @@ public class EjecucionHK {
                 aux3=this.evaluarExpresion(ambito, x.hijos.get(0));
                 if(aux3==null)
                 {
+                    err.nuevoError("Expresion Invalida");
                     return;
                 }
                 if(!aux3.isIsArreglo())
                 {
+                    err.nuevoError("Para una operacion INDICE se necesita que la variable sea un arreglo");
                     return;
                 }
                 if(x.hijos.get(1).hijos.size()>2)
@@ -1404,6 +1526,7 @@ public class EjecucionHK {
                     aux2=this.evaluarExpresion(ambito, n);
                     if(aux2==null)
                     {
+                        err.nuevoError("Expresion Invalida");
                         return;
                     }
                     valores.add(aux2);
@@ -1411,6 +1534,7 @@ public class EjecucionHK {
                 Value ret = aux3.buscarIndice(valores);
                 if(ret==null)
                 {
+                    err.nuevoError("No se pudo encontrar el INDICE en el arreglo");
                     return;
                 }
                 aux1=this.getUltimo();
@@ -1424,11 +1548,13 @@ public class EjecucionHK {
                 if(aux3==null)
                 {
                     //Error
+                    err.nuevoError("Expresion Invalida");
                     return;
                 }
                 if(!aux3.isIsArreglo())
                 {
                     //ERROR
+                    err.nuevoError("Para una operacion LENGTH se necesita que la variable sea un arreglo");
                     return;
                 }
                 Value ret = aux3.lengthArreglo();
@@ -1440,6 +1566,7 @@ public class EjecucionHK {
                 aux3=this.evaluarExpresion(ambito, x.hijos.get(0));
                 if(aux3==null)
                 {
+                    err.nuevoError("Expresion Invalida");
                     return;
                 }
                 for(NodoHK n : x.hijos.get(1).hijos)
@@ -1447,6 +1574,7 @@ public class EjecucionHK {
                     aux2=this.evaluarExpresion(ambito, n);
                     if(aux2==null)
                     {
+                        err.nuevoError("Expresion Invalida");
                         return;
                     }
                     aux3=this.concatArreglos(aux3, aux2);
@@ -1464,6 +1592,7 @@ public class EjecucionHK {
         if(aux3==null || !aux3.getTipo().equals("bool"))
         {
             //ERROR
+            err.nuevoError("IF: No se puede realizar una expresion que no sea de tipo booleana");
             return;
         }
         if(aux3.getTipo().equals("bool") && (Boolean)aux3.getVal())
@@ -1486,10 +1615,12 @@ public class EjecucionHK {
         if(aux1==null)
         {
             //Error
+            err.nuevoError("SWITCH : No se puede realizar una expresion que no sea de tipo booleana");
             return;
         }
         if(aux1.isIsArreglo())
         {
+            err.nuevoError("No se permiten valores de tipo arreglo en las expresiones del switch");
             return;
         }
         for(int i=0; i<nodo.hijos.get(1).hijos.size(); i++)
@@ -1548,15 +1679,18 @@ public class EjecucionHK {
             reg1=this.existeVariable(ambito, nodo.hijos.get(0));
             if(reg1==null)
             {
+                err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "La variable "+nodo.hijos.get(0).valor+" no ha sido declarada");
                 return null;
             }
             if(!reg1.getRol().equals("arr"))
             {
+                err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "La variable "+nodo.hijos.get(0).valor+" debe ser un arreglo");
                 return null;
             }
             aux2=this.evaluarExpresion(ambito, nodo.hijos.get(1));
             if(aux2==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(aux2.isIsArreglo())
@@ -1573,10 +1707,12 @@ public class EjecucionHK {
             reg1=this.existeVariable(ambito, nodo.hijos.get(0));
             if(reg1==null)
             {
+                err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "La variable "+nodo.hijos.get(0).valor+" no ha sido declarada");
                 return null;
             }
             if(!reg1.getRol().equals("arr"))
             {
+                err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "La variable "+nodo.hijos.get(0).valor+" debe ser un arreglo");
                 return null;
             }
             if(inita!=null)
@@ -1585,6 +1721,7 @@ public class EjecucionHK {
             }
             if(arreglo==null)
             {
+                err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "No se pudo asignar el arreglo");
                 return null;
             }
             size=arreglo.getElementosArreglo().size();
@@ -1608,6 +1745,7 @@ public class EjecucionHK {
                     List<Value> sublista = llenarDimension(ambito, nodo.hijos.get(0).hijos.get(i));
                     if(sublista==null)
                     {
+                        err.nuevoError("No se pudo llenar la lista de dimensiones del arreglo");
                         return null;
                     }
                     Value dim = new Value();
@@ -1630,6 +1768,7 @@ public class EjecucionHK {
                 List<Value> sublista = llenarDimension(ambito, nodo.hijos.get(0));
                 if(sublista==null)
                 {
+                    err.nuevoError("No se pudo llenar la lista de dimensiones del arreglo");
                     return null;
                 }
                 arreglo.setTipo(sublista.get(0).getTipo());
@@ -1645,6 +1784,7 @@ public class EjecucionHK {
                 List<Value> lista = llenarDimension(ambito, nodo.hijos.get(0));
                 if(lista==null)
                 {
+                    err.nuevoError("No se pudo llenar la lista de dimensiones del arreglo");
                     return null;
                 }
                 arreglo.setTipo(lista.get(0).getTipo());
@@ -1671,6 +1811,7 @@ public class EjecucionHK {
                 aux3=this.evaluarExpresion(ambito, n);
                 if(aux3==null)
                 {
+                    err.nuevoError("Expresion Invalida");
                     return null;
                 }
                 total++;
@@ -1682,10 +1823,12 @@ public class EjecucionHK {
                 aux3=this.evaluarExpresion(ambito, n);
                 if(aux3==null)
                 {
+                    err.nuevoError("Expresion Invalida");
                     return null;
                 }
                 if(!aux3.getTipo().equals(tipo))
                 {
+                    err.nuevoError("Los tipos de asignacion del arreglo no son iguales");
                     return null;
                 }
                 total++;
@@ -1752,6 +1895,7 @@ public class EjecucionHK {
         }
         else
         {
+            err.nuevoError("No se pudo modificar el valor de la variable "+nombre);
             return false; 
         }
     }
@@ -1769,6 +1913,7 @@ public class EjecucionHK {
         }
         else
         {
+            err.nuevoError("No se pudo modificar el valor de la variable global "+nombre);
             return false;
         }
     }

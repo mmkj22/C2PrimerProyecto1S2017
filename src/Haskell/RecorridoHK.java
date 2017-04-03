@@ -5,6 +5,7 @@
  */
 package Haskell;
 
+import Errores.Errores;
 import Errores.NError;
 import java.util.Calendar;
 import java.util.Enumeration;
@@ -20,6 +21,7 @@ public class RecorridoHK {
     NodoHK raiz;
     TablaSimbolos tabla;
     GregorianCalendar gcalendar = new GregorianCalendar();
+    private Errores err = Errores.getInstance();
     
     public RecorridoHK()
     {
@@ -151,6 +153,7 @@ public class RecorridoHK {
                     }
                     else
                     {
+                        err.nuevoError("La variable "+nombreReg+ " ya ha sido declarada");
                         //ERROR
                     }
                 }

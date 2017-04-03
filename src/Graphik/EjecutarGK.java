@@ -6,6 +6,7 @@
 package Graphik;
 
 
+import Errores.Errores;
 import GUI.TablaResultados;
 import Haskell.Value;
 import Logica.CargarCSV;
@@ -31,12 +32,13 @@ import org.jfree.ui.RefineryUtilities;
 public class EjecutarGK {
     NodoGK root;
     Stack ambito = new Stack();
-    String claseActual;
+    Stack actual = new Stack();
+    Stack claseActual = new Stack();
     TablaSimbolosGK tabla;
     public static Map<String, ClaseGK> listaClases; 
     LinkedList<String> ambitos;
     private boolean romper;
-    private boolean retorna;
+    private boolean retorna=false;
     private boolean vieneBreak=true;
     private boolean continuar = false;
     JTextArea txtResultados;
@@ -51,6 +53,8 @@ public class EjecutarGK {
     Vector vectorActual;
     List<Integer> columnas;
     private static int keySeries = 0;
+    ClaseGK claseAuxiliar;
+    private Errores err = Errores.getInstance();
     
     public EjecutarGK(NodoGK root, JTextArea txtResultados)
     {
@@ -70,8 +74,9 @@ public class EjecutarGK {
         while(it.hasNext()){
             String key = (String)it.next();
             ClaseGK clase = listaClases.get(key);
-            claseActual = clase.getId();
+            claseActual.push(clase.getId());
             this.asignacionGlobales(clase.getVarGlobales(), clase.getNodo());
+            claseActual.pop();
         }
     }
     
@@ -82,8 +87,10 @@ public class EjecutarGK {
             ClaseGK clase = listaClases.get(TablaSimbolosGK.claseCompilar);
             if(clase.metodos.containsKey("Inicio"))
             {
+                claseActual.push(clase.getId());
                 MetodoGK principal = clase.metodos.get("Inicio");
                 this.ambito.push(TablaSimbolosGK.claseCompilar+"-Inicio");
+                this.actual.push(principal);
                 System.out.println("Se encontro Principal");
                 this.recorrido((String)ambito.peek(), principal.getSentencias());
             }
@@ -110,28 +117,30 @@ public class EjecutarGK {
                 if(n.valor.equals("DECLARA_ASIG_VAR"))
                 {
                     System.out.println("Globales: DECLARA_ASIG_VAR");
-                    aux1 = this.evaluarExpresion(claseActual, n.hijos.get(3));
+                    aux1 = this.evaluarExpresion((String)claseActual.peek(), n.hijos.get(3));
                     tipo=n.hijos.get(0).valor;
                     aux2=this.evaluarAsignacion(tipo, aux1);
                     if(aux2==null)
                     {
+                        err.nuevoErrorSemantico(n.hijos.get(1).linea, n.hijos.get(1).columna, "Error de tipos: a la variable"  + n.hijos.get(1).valor+ " no se le puede asignar un tipo "+ aux1.tipogk);
                         return;
                     }
-                    if(!this.modificarValorGlobales(claseActual, n.hijos.get(1), aux2))
+                    if(!this.modificarValorGlobales(globales, n.hijos.get(1), aux2))
                     {
+                        err.nuevoErrorSemantico(n.hijos.get(1).linea, n.hijos.get(1).columna, "No se pudo asignar el valor a la variable: " + n.hijos.get(1).valor);
                         return;
                     }
                 }
                 else if(n.valor.equals("DECLARA_ASIG_ARR"))
                 {
                     System.out.println("Globales: DECLARA_ASIG_ARR");
-                    this.decArray(claseActual, n);
-                    this.decAsigArray(claseActual, n);
+                    this.decArrayGlobal(globales, n, (String)claseActual.peek());
+                    this.decAsigArrayGlobal(globales, n,(String)claseActual.peek());
                 }
                 else if(n.valor.equals("DECLARA_ASIG_OBJ"))
                 {
                     System.out.println("Globales: DECLARA_ASIG_OBJ");
-                    this.decAsigObj(claseActual, n);
+                    this.decAsigObjGlobal(globales, n, (String)claseActual.peek());
                 }
             }
         }
@@ -144,6 +153,7 @@ public class EjecutarGK {
         ClaseGK clase = EjecutarGK.listaClases.get(ubicacion[0]);
         if(clase==null)
         {
+            err.nuevoError("No se encuentra la Clase: "+ubicacion[0]);
             return false;
         }
         if(clase.varGlobales.containsKey(variable.valor))
@@ -155,6 +165,204 @@ public class EjecutarGK {
         return false;
     }
     
+    private boolean modificarValorGlobales(Map<String, SimboloGK> globales, NodoGK variable, Resultado val)
+    {
+        SimboloGK aux1=null;
+        if(globales.containsKey(variable.valor))
+        {
+            aux1=globales.get(variable.valor);
+            aux1.setValor(val);
+            return true;
+        }
+        return false;
+    }
+    
+        private void decArrayGlobal(Map<String, SimboloGK> globales, NodoGK nodo, String ambito)
+    {
+        SimboloGK variable;
+        String[] aux;
+        String arreglo = lDimCad(ambito, nodo.hijos.get(2));
+        aux = arreglo.split("-");
+        int locGlob= Integer.parseInt(aux[1]);
+        arreglo = aux[0];
+        if(!globales.containsKey(nodo.hijos.get(1).valor))
+        {
+            err.nuevoErrorSemantico(nodo.hijos.get(1).linea, nodo.hijos.get(1).columna, "No se encuentra declarada la variable "+nodo.hijos.get(1).valor);
+            return;
+        }
+        variable = globales.get(nodo.hijos.get(1).valor);
+        if(variable==null)
+        {
+            err.nuevoErrorSemantico(nodo.hijos.get(1).linea, nodo.hijos.get(1).columna, "No se encuentra declarada la variable "+nodo.hijos.get(1).valor);
+            return;
+        }
+        if(variable.getRol().equals("arr"))
+        {
+            variable.setTotal(locGlob);
+            variable.setLstDimensiones(arreglo);
+            Resultado content = new Resultado();
+            for(int i= 0; i<locGlob; i++)
+            {
+                content.elementosArreglo.add(new Resultado());
+            }
+            content.tipogk=variable.getTipoVariable();
+            content.totalgk = variable.getTotal();
+            content.lstdimensiones=variable.getLstDimensiones();
+            content.setIsArreglo(true);
+            content.arreglo=true;
+            variable.setValor(content);
+        }
+    }
+    
+    private SimboloGK decAsigArrayGlobal(Map<String, SimboloGK> globales, NodoGK nodo,String ambito) {
+        SimboloGK variable=null;
+        NodoGK inita;
+        int loc, size;
+        Resultado aux2;
+        List<Resultado> arreglo = new  ArrayList();
+        if(!nodo.hijos.get(4).valor.equalsIgnoreCase("ARREGLO")){
+            if(!globales.containsKey(nodo.hijos.get(1).valor))
+            {
+                err.nuevoErrorSemantico(nodo.hijos.get(1).linea, nodo.hijos.get(1).columna, "No se encuentra declarada la variable "+nodo.hijos.get(1).valor);
+                return null;
+            }
+            variable = globales.get(nodo.hijos.get(1).valor);
+            if(!variable.getIsArreglo())
+            {
+                err.nuevoErrorSemantico(nodo.hijos.get(1).linea, nodo.hijos.get(1).columna, "No se encuentra declarada la variable "+nodo.hijos.get(1).valor);
+                return null;
+            }
+            aux2=this.evaluarExpresion(ambito, nodo.hijos.get(4));
+            if(aux2==null)
+            {
+                err.nuevoError("Expresion Incorrecta");
+                return null;
+            }
+            if(variable.getTipoVariable().equalsIgnoreCase(aux2.tipogk))
+            {
+                if(variable.getTotal()<=aux2.totalgk)
+                {
+                    variable.setValor(aux2);
+                }
+                else
+                {
+                    err.nuevoErrorSemantico(nodo.hijos.get(1).linea, nodo.hijos.get(1).columna, "Al arreglo "+ nodo.hijos.get(1).valor +" se le esta asignando mas elementos que los declarados");
+                    return null;
+                }
+            }
+            else
+            {
+                err.nuevoErrorSemantico(nodo.hijos.get(1).linea, nodo.hijos.get(1).columna, "Al arreglo "+ nodo.hijos.get(1).valor +" se le esta asignando un tipo invalido");
+                return null;
+            }
+        }
+        else
+        {
+            inita=nodo.hijos.get(4);
+            if(!globales.containsKey(nodo.hijos.get(1).valor))
+            {
+                err.nuevoErrorSemantico(nodo.hijos.get(1).linea, nodo.hijos.get(1).columna, "La variable "+ nodo.hijos.get(1).valor +" no se encuentra declarada");
+                return null;
+            }
+            variable = globales.get(nodo.hijos.get(1).valor);
+            if(!variable.getRol().equalsIgnoreCase("arr"))
+            {
+                err.nuevoErrorSemantico(nodo.hijos.get(1).linea, nodo.hijos.get(1).columna, "La variable "+ nodo.hijos.get(1).valor +" debe ser tipo arreglo");
+                return null;
+            }
+            this.arregloInit.clear();
+            if(inita!=null)
+            {
+                this.inita(ambito, inita);
+            }
+            size=this.arregloInit.size();
+            if(size>0 && size==variable.getTotal())
+            {
+                for(int z=0; z<size; z++)
+                {
+                    aux2=this.arregloInit.get(z);
+                    if(!aux2.tipogk.equalsIgnoreCase(variable.getTipoVariable()))
+                    {
+                        err.nuevoErrorSemantico(nodo.hijos.get(1).linea, nodo.hijos.get(1).columna, "Al arreglo "+ nodo.hijos.get(1).valor + " se le quiere asignar un valor invalido");
+                        break;
+                    }
+                    arreglo.add(aux2);
+                }
+            }
+            String [] dimensiones = variable.getLstDimensiones().split("_");
+            Resultado content = new Resultado(variable.getTipoVariable(), arreglo);
+            content.totalgk=variable.getTotal();
+            content.lstdimensiones=variable.getLstDimensiones();
+            content.setDimensiones(variable.getN_dimensiones());
+            content.setIsArreglo(true);
+            content.arreglo=true;
+            variable.setValor(content);
+        }
+        return variable;
+    }
+    
+    private void decAsigObjGlobal(Map<String, SimboloGK> globales, NodoGK nodo,String ambito) {
+        SimboloGK variable;
+        if(!globales.containsKey(nodo.hijos.get(1).valor))
+        {
+            err.nuevoErrorSemantico(nodo.hijos.get(1).linea, nodo.hijos.get(1).columna, "La variable "+ nodo.hijos.get(1).valor +" no se encuentra declarada");
+            return;
+        }
+        variable = globales.get(nodo.hijos.get(1).valor);
+        if(!variable.getTipoVariable().equals(nodo.hijos.get(0).valor))
+        {
+            err.nuevoErrorSemantico(nodo.hijos.get(1).linea, nodo.hijos.get(1).columna, "Error de tipos asigne a la variable "+ nodo.hijos.get(1).valor +" un tipo valido");
+            return;
+        }
+        if(nodo.hijos.get(0).valor.equals(nodo.hijos.get(3).valor))
+        {
+            if(existeImportacion(ambito, nodo.hijos.get(3).valor))
+            {
+                if(this.listaClases.containsKey(nodo.hijos.get(3).valor))
+                {
+                    ClaseGK clase = this.listaClases.get(nodo.hijos.get(3).valor);
+                    if(clase.getVisibilidad().equalsIgnoreCase("publico") || clase.getVisibilidad().equalsIgnoreCase("protegido"))
+                    {
+                        try{
+                        ClaseGK asignacion;
+                        ClonarCosas clonar = new ClonarCosas();
+                        asignacion = clonar.clonarClase(clase.clone());
+                        if(asignacion==null)
+                        {
+                            err.nuevoErrorSemantico(nodo.hijos.get(1).linea, nodo.hijos.get(1).columna, "No se pudo realizar la instancia del objeto");
+                            return;
+                        }
+                        claseActual.push(asignacion.getId());
+                        this.asignacionGlobales(asignacion.getVarGlobales(), asignacion.getNodo());
+                        claseActual.pop();
+                        if(clase.getHereda()!=null)
+                        {
+                            ClaseGK hereda;
+                            hereda = clonar.clonarClase(clase.getHereda().clone());
+                            if(hereda == null)
+                            {
+                                err.nuevoErrorSemantico(nodo.hijos.get(1).linea, nodo.hijos.get(1).columna, "No se pudo realizar la instancia del objeto");
+                                return;
+                            }
+                            claseActual.push(hereda.getId());
+                            this.asignacionGlobales(hereda.getVarGlobales(), hereda.getNodo());
+                            claseActual.pop();
+                            asignacion.setHereda(hereda);
+                        }
+                        variable.setValor(asignacion);
+                        }catch(CloneNotSupportedException ex)
+                        {
+                            Logger.getLogger(EjecutarGK.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            err.nuevoErrorSemantico(nodo.hijos.get(1).linea, nodo.hijos.get(1).columna, "A una variable de tipo "+ nodo.hijos.get(0).valor +" le esta asignando un tipo" + nodo.hijos.get(3).valor + " SEA COHERENTE");
+        }
+    }
     
     private Resultado evaluarAsignacion(String tipo, Resultado valor)
     {
@@ -246,6 +454,7 @@ public class EjecutarGK {
         }
         else
         {
+            err.nuevoError("Error de tipos a" + tipo + " no se le puede asignar "+ valor.tipogk);
             return null;
         }
     }
@@ -263,6 +472,7 @@ public class EjecutarGK {
             temp2=this.evaluarExpresion(ambito, nodo.hijos.get(1));
             if(temp1==null || temp2==null)
             {
+                err.nuevoError("Expresion invalida");
                 return null;
             }
             //RETORNA TIPO DECIMAL------------------------------------------------------------------------------
@@ -381,6 +591,7 @@ public class EjecutarGK {
             }
             else
             {
+                err.nuevoError("No se puede hacer suma de los tipos" + temp1.tipogk +" y " + temp2.tipogk);
                 return null;
             }
         }
@@ -391,6 +602,7 @@ public class EjecutarGK {
                 temp1=this.evaluarExpresion(ambito, nodo.hijos.get(0));
                 if(temp1==null)
                 {
+                    err.nuevoError("Expresion invalida");
                     return null;
                 }
                 if(temp1.tipogk.equalsIgnoreCase("entero"))
@@ -410,6 +622,7 @@ public class EjecutarGK {
                 }
                 else 
                 {
+                    err.nuevoError("No se puede hacer negativo un tipo" + temp1.tipogk);
                     return null;
                 }
             }
@@ -419,6 +632,7 @@ public class EjecutarGK {
                 temp2=this.evaluarExpresion(ambito,nodo.hijos.get(1));
                 if(temp1==null || temp2==null)
                 {
+                    err.nuevoError("Expresion invalida");
                     return null;
                 }
                 //RETORNA TIPO DECIMAL--------------------------------------------------------------------------
@@ -485,6 +699,7 @@ public class EjecutarGK {
                 }
                 else
                 {
+                    err.nuevoError("No se puede hacer resta de los tipos" + temp1.tipogk +" y " + temp2.tipogk);
                     return null;
                 }
             }
@@ -495,6 +710,7 @@ public class EjecutarGK {
             temp2=this.evaluarExpresion(ambito, nodo.hijos.get(1));
             if(temp1==null || temp2==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             //RETORNA TIPO DECIMAL
@@ -577,6 +793,7 @@ public class EjecutarGK {
             }
             else
             {
+                err.nuevoError("No se puede hacer multiplicacion de los tipos" + temp1.tipogk +" y " + temp2.tipogk);
                 return null;
             }
         }
@@ -673,6 +890,7 @@ public class EjecutarGK {
             }
             else
             {
+                err.nuevoError("No se puede hacer division de los tipos" + temp1.tipogk +" y " + temp2.tipogk);
                 return null;
             }
         }
@@ -682,6 +900,7 @@ public class EjecutarGK {
             temp2= this.evaluarExpresion(ambito, nodo.hijos.get(1));
             if(temp1==null || temp2==null)
             {
+                err.nuevoError("Expresion invalida");
                 return null;
             }
             //RETORNA TIPO DECIMAL
@@ -753,6 +972,7 @@ public class EjecutarGK {
             }
             else
             {
+                err.nuevoError("No se puede hacer potencia de los tipos" + temp1.tipogk +" y " + temp2.tipogk);
                 return null;
             }
         }
@@ -761,11 +981,13 @@ public class EjecutarGK {
             temp1=this.evaluarExpresion(ambito, nodo.hijos.get(0));
             if(temp1==null)
             {
+                err.nuevoError("Expresion invalida");
                 return null;
             }
             temp2=this.evaluarAumento(ambito, temp1);
             if(temp2==null)
             {
+                err.nuevoError("No se pudo hacer aumento");
                 return null;
             }
             content=temp2;
@@ -776,11 +998,13 @@ public class EjecutarGK {
             temp1=this.evaluarExpresion(ambito, nodo.hijos.get(0));
             if(temp1==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             temp2=this.evaluarDecremento(ambito, temp1);
             if(temp2==null)
             {
+                err.nuevoError("No se pudo hacer aumento");
                 return null;
             }
             content=temp2;
@@ -792,6 +1016,7 @@ public class EjecutarGK {
             temp2=this.evaluarExpresion(ambito, nodo.hijos.get(1));
             if(temp1==null || temp2==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.tipogk.equalsIgnoreCase("entero") && temp2.tipogk.equalsIgnoreCase("entero"))
@@ -1037,6 +1262,7 @@ public class EjecutarGK {
             }
             else 
             {
+                err.nuevoError("No se puede hacer una comparacion de igualacion de los tipos "+temp1.tipogk + " y "+ temp2.tipogk);
                 return null;
             }
         }
@@ -1046,6 +1272,7 @@ public class EjecutarGK {
             temp2=this.evaluarExpresion(ambito, nodo.hijos.get(1));
             if(temp1==null || temp2==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.tipogk.equalsIgnoreCase("entero") && temp2.tipogk.equalsIgnoreCase("entero"))
@@ -1291,6 +1518,7 @@ public class EjecutarGK {
             }
             else 
             {
+                err.nuevoError("No se puede hacer una comparacion de no igual de los tipos "+temp1.tipogk + " y "+ temp2.tipogk);
                 return null;
             }
         }
@@ -1300,6 +1528,7 @@ public class EjecutarGK {
             temp2=this.evaluarExpresion(ambito, nodo.hijos.get(1));
             if(temp1==null || temp2==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.tipogk.equalsIgnoreCase("entero") && temp2.tipogk.equalsIgnoreCase("entero"))
@@ -1545,6 +1774,7 @@ public class EjecutarGK {
             }
             else 
             {
+                err.nuevoError("No se puede hacer una comparacion de menor de los tipos "+temp1.tipogk + " y "+ temp2.tipogk);
                 return null;
             }
 
@@ -1555,6 +1785,7 @@ public class EjecutarGK {
             temp2=this.evaluarExpresion(ambito, nodo.hijos.get(1));
             if(temp1==null || temp2==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.tipogk.equalsIgnoreCase("entero") && temp2.tipogk.equalsIgnoreCase("entero"))
@@ -1800,6 +2031,7 @@ public class EjecutarGK {
             }
             else 
             {
+                err.nuevoError("No se puede hacer una comparacion de mayor de los tipos "+temp1.tipogk + " y "+ temp2.tipogk);
                 return null;
             }
 
@@ -1810,6 +2042,7 @@ public class EjecutarGK {
             temp2=this.evaluarExpresion(ambito, nodo.hijos.get(1));
             if(temp1==null || temp2==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.tipogk.equalsIgnoreCase("entero") && temp2.tipogk.equalsIgnoreCase("entero"))
@@ -2055,6 +2288,7 @@ public class EjecutarGK {
             }
             else 
             {
+                err.nuevoError("No se puede hacer una comparacion de menor igual de los tipos "+temp1.tipogk + " y "+ temp2.tipogk);
                 return null;
             }
 
@@ -2065,6 +2299,7 @@ public class EjecutarGK {
             temp2=this.evaluarExpresion(ambito, nodo.hijos.get(1));
             if(temp1==null || temp2==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.tipogk.equalsIgnoreCase("entero") && temp2.tipogk.equalsIgnoreCase("entero"))
@@ -2310,6 +2545,7 @@ public class EjecutarGK {
             }
             else 
             {
+                err.nuevoError("No se puede hacer una comparacion de menor igual de los tipos "+temp1.tipogk + " y "+ temp2.tipogk);
                 return null;
             }
 
@@ -2320,6 +2556,7 @@ public class EjecutarGK {
             temp2=this.evaluarExpresion(ambito, nodo.hijos.get(1));
             if(temp1==null || temp2==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.tipogk.equalsIgnoreCase("bool") && temp2.tipogk.equalsIgnoreCase("bool"))
@@ -2339,6 +2576,7 @@ public class EjecutarGK {
             }
             else
             {
+                err.nuevoError("No se puede hacer una expresion logica de los tipos "+temp1.tipogk + " y "+ temp2.tipogk);
                 return null;
             }
         }
@@ -2348,6 +2586,7 @@ public class EjecutarGK {
             temp2=this.evaluarExpresion(ambito, nodo.hijos.get(1));
             if(temp1==null || temp2==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.tipogk.equalsIgnoreCase("bool") && temp2.tipogk.equalsIgnoreCase("bool"))
@@ -2367,6 +2606,7 @@ public class EjecutarGK {
             }
             else
             {
+                err.nuevoError("No se puede hacer una expresion logica de los tipos "+temp1.tipogk + " y "+ temp2.tipogk);
                 return null;
             }
         }
@@ -2376,6 +2616,7 @@ public class EjecutarGK {
             temp2=this.evaluarExpresion(ambito, nodo.hijos.get(1));
             if(temp1==null || temp2==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.tipogk.equalsIgnoreCase("bool") && temp2.tipogk.equalsIgnoreCase("bool"))
@@ -2395,6 +2636,7 @@ public class EjecutarGK {
             }
             else
             {
+                err.nuevoError("No se puede hacer una expresion logica de los tipos "+temp1.tipogk + " y "+ temp2.tipogk);
                 return null;
             }
         }
@@ -2403,6 +2645,7 @@ public class EjecutarGK {
             temp1 = this.evaluarExpresion(ambito, nodo.hijos.get(0));
             if(temp1==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(temp1.tipogk.equalsIgnoreCase("bool"))
@@ -2422,6 +2665,7 @@ public class EjecutarGK {
             }
             else
             {
+                err.nuevoError("No se puede hacer una negacion del tipo "+temp1.tipogk);
                 return null;
             }
         }
@@ -2443,11 +2687,13 @@ public class EjecutarGK {
             simGeneral = this.existeVariable(ambito, nodo.hijos.get(0));
             if(simGeneral==null)
             {
+                err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "No existe la variable "+ nodo.hijos.get(0).valor);
                 return null;
             }
             content = this.tipoIdentificador(simGeneral);
             if(content==null)
             {
+                err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "No se pudo saber el tipo de identificador de "+ nodo.hijos.get(0).valor);
                 return null;
             }
             return content;
@@ -2490,6 +2736,7 @@ public class EjecutarGK {
             content=this.generarArreglo(ambito, nodo);
             if(content==null)
             {
+                err.nuevoError("No se pudo generar el arreglo");
                 return null;
             }
             return content;
@@ -2511,6 +2758,7 @@ public class EjecutarGK {
                     temp1=this.evaluarExpresion(ambito, n);
                     if(temp1==null)
                     {
+                        err.nuevoError("Expresion Invalida");
                         return null;
                     }
                     lst_parametros.add(temp1);
@@ -2519,13 +2767,14 @@ public class EjecutarGK {
                 content = llamadas.generarLlamadaHK(nodo.hijos.get(0), lst_parametros);
                 if(content==null)
                 {
+                    err.nuevoError("No se pudo generar la Llamada a haskell");
                     return null;
                 }
                 return content;
             }
             else
             {
-                //ERROR
+                err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(1).columna, "No se importo la llamada a Haskell anteriormente "+ nodo.hijos.get(0).valor);
                 return null;
             }
         }
@@ -2538,6 +2787,7 @@ public class EjecutarGK {
                     temp1=this.evaluarExpresion(ambito, n);
                     if(temp1==null)
                     {
+                        err.nuevoError("Expresion Invalida");
                         return null;
                     }
                     lst_parametros.add(temp1);
@@ -2552,7 +2802,7 @@ public class EjecutarGK {
             }
             else
             {
-                //ERROR
+                err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(1).columna, "No se importo la llamada a Haskell anteriormente "+ nodo.hijos.get(0).valor);
                 return null;
             }
         }
@@ -2568,14 +2818,16 @@ public class EjecutarGK {
             int size = nodo.hijos.get(1).hijos.size();
             if(nodo.hijos.get(1).hijos.get(size-1).valor.equalsIgnoreCase("LLAMAR_MET"))
             {
+                err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "No puso la palabra llamar para una llamada a metodo");
                 return null;
             }
             temp1=this.accesoObjetos(ambito, nodo);
             if(temp1==null)
             {
+                err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "No se pudo acceder al objeto");
                 return null;
             }
-            
+            return temp1;
         }
         else if(nodo.valor.equals("ACCESOBJ_LLAMADA"))
         {
@@ -2583,13 +2835,16 @@ public class EjecutarGK {
             int size = nodo.hijos.get(1).hijos.size();
             if(!nodo.hijos.get(1).hijos.get(size-1).valor.equalsIgnoreCase("LLAMAR_MET"))
             {
+                err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "Debe poner la palabra llamada si desea llamar a un metodo");
                 return null;
             }
             temp1=this.accesoObjetos(ambito, nodo);
             if(temp1==null)
             {
+                err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "No se puede llamar al metodo en un acceso a objeto");
                 return null;
             }
+            return temp1;
         }
         else if(nodo.valor.equalsIgnoreCase("AccesoArreglo"))
         {
@@ -2597,6 +2852,7 @@ public class EjecutarGK {
             content = this.getArray(ambito, nodo);
             if(content==null)
             {
+                err.nuevoError("No se pudo obtener la posicion del arreglo");
                 return null;
             }
             return content;
@@ -2606,25 +2862,29 @@ public class EjecutarGK {
             temp1=this.evaluarExpresion(ambito, nodo.hijos.get(0));
             if(temp1==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(!temp1.tipogk.equalsIgnoreCase("entero"))
             {
+                err.nuevoError("El valor de la Columna siempre debe ser un entero");
                 return null;
             }
             columnas.add(temp1.valgk);
             content = (Resultado)vectorActual.get(temp1.valgk);
             if(content==null)
             {
+                err.nuevoError("No se encontro el dato de la columna");
                 return null;
             }
             return content;
         }
         else 
         {
+            err.nuevoError("No se encontro ningun match en el metodo evaluarExpresion");
             return null;
         }
-        return null;
+        
     }
     
     private int valorCadena(String cadena)
@@ -2772,8 +3032,9 @@ public class EjecutarGK {
         return aux1;
     }
     
-    SimboloGK getIdsLocal(MetodoGK metodo, NodoGK nodo)
+    SimboloGK getIdsLocal(MetodoGK met, NodoGK nodo)
     {
+        MetodoGK metodo = (MetodoGK) this.actual.peek();
         SimboloGK registro=null;
         if(metodo.varLocales.containsKey(nodo.valor))
         {
@@ -2784,6 +3045,7 @@ public class EjecutarGK {
                     registro=metodo.varLocales.get(nodo.valor);
                     if(registro == null)
                     {
+                        err.nuevoErrorSemantico(nodo.linea, nodo.columna, "La variable "+nodo.valor+" no ha sido declarada");
                         return null;
                     }
                     return registro;
@@ -2797,6 +3059,7 @@ public class EjecutarGK {
                 registro=metodo.varLocales.get(nodo.valor);
                 if(registro == null)
                 {
+                    err.nuevoErrorSemantico(nodo.linea, nodo.columna, "La variable "+nodo.valor+" no ha sido declarada");
                     return null;
                 }
                 return registro;
@@ -2807,6 +3070,7 @@ public class EjecutarGK {
             registro = metodo.parametros.get(nodo.valor);
             if(registro==null)
             {
+                err.nuevoErrorSemantico(nodo.linea, nodo.columna, "La variable "+nodo.valor+" no ha sido declarada");
                 return null;
             }
             return registro;
@@ -2822,6 +3086,7 @@ public class EjecutarGK {
             registro=clase.varGlobales.get(nodo.valor);
             if(registro!=null)
             {
+                err.nuevoErrorSemantico(nodo.linea, nodo.columna, "La variable "+nodo.valor+" no ha sido declarada");
                 return registro;
             }
         }
@@ -2840,369 +3105,445 @@ public class EjecutarGK {
             {
                 if(x!=null)
                 {
-                    if(romper==false /*|| retorna==false*/)
-                    {
-                        if(x.valor.equalsIgnoreCase("DECLARA_VAR"))
+                    if(retorna == false){
+                        if(romper==false)
                         {
-                            if((boolean)bandera.peek())
+                            if(x.valor.equalsIgnoreCase("DECLARA_VAR"))
                             {
-                                this.agregarVariable(ambito, x, 0);
-                            }
-                            else
-                            {
-                                //AQUI NO SE HACE NADA PORQUE SOLO ES DECLARACION DE VARIABLES Y YA DECLARE LAS LOCALES.
-                            }
-                        }
-                        else if(x.valor.equalsIgnoreCase("DECLARA_ARR"))
-                        {
-                            if((boolean)bandera.peek())
-                            {
-                                this.agregarArreglo(ambito, x);
-                            }
-                            else
-                            {
-                                this.decArray(ambito, x);
-                            }
-                        }
-                        else if(x.valor.equalsIgnoreCase("DECLARA_ASIG_VAR"))
-                        {
-                            System.out.println("EJ: Entro a Declaracion y Asignacion de variable");
-                            if((boolean)bandera.peek())
-                            {
-                                this.agregarVariable(ambito,x, 1);
-                            }
-                            else
-                            {
-                                bien = this.DeclaraAsignaVariable(ambito, x);
-                                if(!bien)
+                                if((boolean)bandera.peek())
                                 {
-                                    return;
+                                    this.agregarVariable(ambito, x, 0);
+                                }
+                                else
+                                {
+                                    //AQUI NO SE HACE NADA PORQUE SOLO ES DECLARACION DE VARIABLES Y YA DECLARE LAS LOCALES.
                                 }
                             }
-                        }
-                        else if(x.valor.equalsIgnoreCase("DECLARA_ASIG_OBJ"))
-                        {
-                            System.out.println("EJ: Entro a Declaracion y Asignacion de Objeto");
-                            if((boolean)bandera.peek())
+                            else if(x.valor.equalsIgnoreCase("DECLARA_ARR"))
                             {
-                                //AGREGAR A TABLA DE SIMBOLOS Y ASIGNARLE SU VALOR
-                            }
-                            else
-                            {
-                                this.decAsigObj(ambito, x);
-                            }
-                        }
-                        else if(x.valor.equalsIgnoreCase("DECLARA_ASIG_ARR"))
-                        {
-                            System.out.println("EJ: Entro a Declara Asigna Arreglo");
-                            if((boolean)bandera.peek())
-                            {
-                                //AGREGAR A TABLA DE SIMBOLOS Y ASIGNAR VALORES
-                            }
-                            else
-                            {
-                                this.decArray(ambito, x);
-                                this.decAsigArray(ambito, x);
-                            }
-                        }
-                        else if(x.valor.equalsIgnoreCase("ASIGNACION"))
-                        {
-                            System.out.println("EJ: Entro a Asignacion");
-                            bien=this.AsignaVariable(ambito, x);
-                            if(!bien)
-                            {
-                                return;
-                            }
-                        }
-                        else if(x.valor.equalsIgnoreCase("ASIG_OBJ"))
-                        {
-                            //CUANDO SOLO ES ASIGNACION DE UNA INSTANCIA
-                        }
-                        else if(x.valor.equalsIgnoreCase("ASIG_ACCESOBJ"))
-                        {
-                            //cuando tengo esto hola.a = 23?
-                        }
-                        else if(x.valor.equalsIgnoreCase("ASIGNA_ARR"))
-                        {
-                            System.out.println("Entro a Asignacion Arreglo");
-                            this.asigArray(ambito, x);
-                        }
-                        else if(x.valor.equalsIgnoreCase("SI"))
-                        {
-                            System.out.println("EJ: Entro Si");
-                            this.hacerIf(ambito, x);
-                        }
-                        else if(x.valor.equalsIgnoreCase("SINO"))
-                        {
-                            System.out.println("EJ: Entro a Sino");
-                            this.hacerIfElse(ambito, x);
-                        }
-                        else if(x.valor.equalsIgnoreCase("SELECCIONA"))
-                        {
-                            System.out.println("EJ: Entro a Selecciona");
-                            this.hacerSwitch(ambito, x);
-                        }
-                        else if(x.valor.equalsIgnoreCase("PARA"))
-                        {
-                            System.out.println("EJ: Entro a Para");
-                            this.hacerPara(ambito, x);
-                        }
-                        else if(x.valor.equalsIgnoreCase("MIENTRAS"))
-                        {
-                            System.out.println("EJ: Entro a Mientras");
-                            this.hacerMientras(ambito, x);
-                        }
-                        else if(x.valor.equalsIgnoreCase("HACERMIENTRAS"))
-                        {
-                            System.out.println("EJ: Entro a Hacer Mientras");
-                            this.hacerDo(ambito, x);
-                        }
-                        else if(x.valor.equalsIgnoreCase("CONTINUAR"))
-                        {
-                            System.out.println("EJ: Entro a Continuar");
-                            romper=true;
-                            continuar=true;
-                        }
-                        else if(x.valor.equalsIgnoreCase("TERMINAR"))
-                        {
-                            System.out.println("EJ: Entro a Terminar");
-                            romper=true;
-                        }
-                        else if(x.valor.equalsIgnoreCase("RETORNO"))
-                        {
-                            System.out.println("EJ: Entro a Retorno");
-                            if(x.hijos.size()>0)
-                            {
-                                aux3 = this.evaluarExpresion(ambito, x.hijos.get(0));
-                                if(aux3==null)
+                                if((boolean)bandera.peek())
                                 {
-                                    return;
+                                    this.agregarArreglo(ambito, x);
                                 }
-                                valorRetorno = aux3;
-                                return;
-                            }
-                            else
-                            {
-                                //retorna=true;
-                            }
-                        }
-                        else if(x.valor.equalsIgnoreCase("LLAMAR_MET"))
-                        {
-                            System.out.println("EJ: Entro a Llamar Metodo");
-                            this.hacerLlamada(x, ambito);
-                        }
-                        else if(x.valor.equalsIgnoreCase("LLAMARHK"))
-                        {
-                            System.out.println("EJ: Entro a Llamar Haskell");
-                            if(existeHKGuardado(ambito, x.hijos.get(0).valor)){
-                                List<Resultado> lst_parametros = new ArrayList();
-                                for(NodoGK n : x.hijos.get(1).hijos)
+                                else
                                 {
-                                    aux3=this.evaluarExpresion(ambito, n);
-                                    if(aux3==null)
+                                    this.decArray(ambito, x);
+                                }
+                            }
+                            else if(x.valor.equalsIgnoreCase("DECLARA_ASIG_VAR"))
+                            {
+                                System.out.println("EJ: Entro a Declaracion y Asignacion de variable");
+                                if((boolean)bandera.peek())
+                                {
+                                    this.agregarVariable(ambito,x, 1);
+                                }
+                                else
+                                {
+                                    bien = this.DeclaraAsignaVariable(ambito, x);
+                                    if(!bien)
                                     {
+                                        err.nuevoError("No se pudo asignar la variable");
                                         return;
                                     }
-                                    lst_parametros.add(aux3);
                                 }
-                                LlamadasHK llamadas = new LlamadasHK(txtResultados);
-                                aux2 = llamadas.generarLlamadaHK(x.hijos.get(0), lst_parametros);
-                                if(aux2==null)
+                            }
+                            else if(x.valor.equalsIgnoreCase("DECLARA_ASIG_OBJ"))
+                            {
+                                System.out.println("EJ: Entro a Declaracion y Asignacion de Objeto");
+                                if((boolean)bandera.peek())
                                 {
+                                    //AGREGAR A TABLA DE SIMBOLOS Y ASIGNARLE SU VALOR
+                                    this.agregarObjeto(ambito, x);
+                                    this.decAsigObj(ambito, x);
+                                }
+                                else
+                                {
+                                    this.decAsigObj(ambito, x);
+                                }
+                            }
+                            else if(x.valor.equalsIgnoreCase("DECLARA_ASIG_ARR"))
+                            {
+                                System.out.println("EJ: Entro a Declara Asigna Arreglo");
+                                if((boolean)bandera.peek())
+                                {
+                                    //AGREGAR A TABLA DE SIMBOLOS Y ASIGNAR VALORES
+                                    this.agregarArreglo(ambito, x);
+                                    this.decAsigArray(ambito, x);
+
+                                }
+                                else
+                                {
+                                    this.decArray(ambito, x);
+                                    this.decAsigArray(ambito, x);
+                                }
+                            }
+                            else if(x.valor.equalsIgnoreCase("ASIGNACION"))
+                            {
+                                System.out.println("EJ: Entro a Asignacion");
+                                bien=this.AsignaVariable(ambito, x);
+                                if(!bien)
+                                {
+                                    err.nuevoError("No se pudo realizar la asignacion");
                                     return;
                                 }
-                                System.out.println("Parece que funciono la Llamada a HK");
                             }
-                            else
+                            else if(x.valor.equalsIgnoreCase("ASIG_OBJ"))
                             {
-                                //ERROR
-                                return;
-                            }
-                        }
-                        else if(x.valor.equalsIgnoreCase("ACCESOBJ"))
-                        {
-                            //CUANDO VOY A LLAMAR A UN METODO DE UN OBJETO
-                            System.out.println("EX: Entro Acceso a Objeto, variable");
-                            int size = x.hijos.get(1).hijos.size();
-                            if(x.hijos.get(1).hijos.get(size-1).valor.equalsIgnoreCase("LLAMAR_MET"))
-                            {
-                                return;
-                            }
-                            aux3=this.accesoObjetos(ambito, x);
-                            if(aux3==null)
-                            {
-                                return;
-                            }
-                        }
-                        else if(x.valor.equalsIgnoreCase("ACCESOBJ_LLAMADA"))
-                        {
-                            //CUANDO VOY A LLAMAR A UN METODO DE UN OBJETO
-                            System.out.println("EX: Entro Acceso a Objeto, Llamada a Metodo");
-                            int size = x.hijos.get(1).hijos.size();
-                            if(!x.hijos.get(1).hijos.get(size-1).valor.equalsIgnoreCase("LLAMAR_MET"))
-                            {
-                                return;
-                            }
-                            aux3=this.accesoObjetos(ambito, x);
-                            if(aux3==null)
-                            {
-                                return;
-                            }
-                        }
-                        else if(x.valor.equalsIgnoreCase("GRAFICAR"))
-                        {
-                            System.out.println("Entro a Graficar");
-                            aux2 = this.evaluarExpresion(ambito, x.hijos.get(0));
-                            if(aux2==null)
-                            {
-                                return;
-                            }
-                            aux3 = this.evaluarExpresion(ambito, x.hijos.get(1));
-                            if(aux3==null)
-                            {
-                                return;
-                            }
-                            if(aux2.arreglo && aux3.arreglo)
-                            {
-                                if(aux2.tipogk.equalsIgnoreCase(aux3.tipogk))
+                                //CUANDO SOLO ES ASIGNACION DE UNA INSTANCIA
+                                System.out.println("Entro a asignacion de instancia");
+                                SimboloGK simGeneral;
+                                simGeneral = this.asigObjeto(ambito, x);
+                                if(simGeneral== null)
                                 {
-                                    if(aux2.totalgk==aux3.totalgk)
+                                    err.nuevoError("No se pudo realizar la asignacion de la instancia");
+                                    return;
+                                }
+                            }
+                            else if(x.valor.equalsIgnoreCase("ACCESOBJ_INSTANCIA"))
+                            {
+                                System.out.println("Entro a Asignarle a un acceso una instancia");
+                                //ASIGNAR ALGO ASI nueva.nodos = nuevo Nodo()
+                                SimboloGK simGeneral;
+                                simGeneral=this.asigAccesoObj(ambito, x);
+                                if(simGeneral==null)
+                                {
+                                    err.nuevoError("No se encontro el acceso al objeto");
+                                    return;
+                                }
+                                SimboloGK variable;
+                                variable = this.asignacionObj(ambito, simGeneral, x);
+                                if(variable==null)
+                                {
+                                    err.nuevoError("No se pudo realizar la asignacion del acceso de objeto");
+                                    return;
+                                }
+                            }
+                            else if(x.valor.equalsIgnoreCase("ASIG_ACCESOBJ"))
+                            {
+                                //cuando tengo esto hola.a = 23?
+                                System.out.println("Entro a Asignacion a un acceso de objetos");
+                                if(x.hijos.get(0).valor.equalsIgnoreCase("ACCESOBJ_LLAMADA"))
+                                {
+                                    err.nuevoError("Si quiere llamar a un metodo debe de colocar la palabra llamar.");
+                                    return;
+                                }
+                                SimboloGK sim;
+                                sim=this.asigAccesoObj(ambito, x);
+                                if(sim==null)
+                                {
+                                    err.nuevoError("No se puedo realizar la asignacion del acceso de objeto");
+                                    return;
+                                }
+                            }
+                            else if(x.valor.equalsIgnoreCase("ASIGNA_ARR"))
+                            {
+                                System.out.println("Entro a Asignacion Arreglo");
+                                this.asigArray(ambito, x);
+                            }
+                            else if(x.valor.equalsIgnoreCase("SI"))
+                            {
+                                System.out.println("EJ: Entro Si");
+                                this.hacerIf(ambito, x);
+                            }
+                            else if(x.valor.equalsIgnoreCase("SINO"))
+                            {
+                                System.out.println("EJ: Entro a Sino");
+                                this.hacerIfElse(ambito, x);
+                            }
+                            else if(x.valor.equalsIgnoreCase("SELECCIONA"))
+                            {
+                                System.out.println("EJ: Entro a Selecciona");
+                                this.hacerSwitch(ambito, x);
+                            }
+                            else if(x.valor.equalsIgnoreCase("PARA"))
+                            {
+                                System.out.println("EJ: Entro a Para");
+                                this.hacerPara(ambito, x);
+                            }
+                            else if(x.valor.equalsIgnoreCase("MIENTRAS"))
+                            {
+                                System.out.println("EJ: Entro a Mientras");
+                                this.hacerMientras(ambito, x);
+                            }
+                            else if(x.valor.equalsIgnoreCase("HACERMIENTRAS"))
+                            {
+                                System.out.println("EJ: Entro a Hacer Mientras");
+                                this.hacerDo(ambito, x);
+                            }
+                            else if(x.valor.equalsIgnoreCase("CONTINUAR"))
+                            {
+                                System.out.println("EJ: Entro a Continuar");
+                                romper=true;
+                                continuar=true;
+                            }
+                            else if(x.valor.equalsIgnoreCase("TERMINAR"))
+                            {
+                                System.out.println("EJ: Entro a Terminar");
+                                romper=true;
+                            }
+                            else if(x.valor.equalsIgnoreCase("RETORNO"))
+                            {
+                                System.out.println("EJ: Entro a Retorno");
+                                if(x.hijos.size()>0)
+                                {
+                                    aux3 = this.evaluarExpresion(ambito, x.hijos.get(0));
+                                    if(aux3==null)
                                     {
-                                        Graficar grafica = Graficar.getInstance();
-                                        grafica.addSerie(aux2.elementosArreglo, aux3.elementosArreglo, String.valueOf(keySeries));
-                                        grafica.personalizarGrafica();
-                                        grafica.mostrarGrafica();
-                                        grafica.pack();
-                                        RefineryUtilities.centerFrameOnScreen(grafica);// TODO add your handling code here:
-                                        grafica.setVisible(true);
+                                        err.nuevoError("Expresion Invalida");
+                                        return;
                                     }
-                                }
-                            }
-                            keySeries++;
-                        }
-                        else if(x.valor.equalsIgnoreCase("IMPRIMIR"))
-                        {
-                            System.out.println("EJ: Entro a Imprimir");
-                            imprimirPantalla(ambito, x);
-                        }
-                        else if(x.valor.equalsIgnoreCase("PROCESAR"))
-                        {
-                            System.out.println("EJ: Entro a Procesar");
-                            if(x.hijos.get(1).valor.equalsIgnoreCase("DONDE"))
-                            {
-                                //PRIMERO VOY A TRAER LA FILA DEL FILTRO
-                                System.out.println("EJ: Entro a Donde");
-                                aux2= this.evaluarExpresion(ambito, x.hijos.get(1).hijos.get(0));
-                                aux3= this.evaluarExpresion(ambito, x.hijos.get(1).hijos.get(1));
-                                Vector prueba = CargarCSV.getInstance().consultaDonde(aux2, aux3);
-                                if(prueba==null)
-                                {
+                                    valorRetorno = aux3;
+                                    retorna = true;
                                     return;
                                 }
-                                vectorActual=prueba;
-                                columnas = new ArrayList();
+                                else
+                                {
+                                    retorna = true;
+                                    return;
+                                }
+                            }
+                            else if(x.valor.equalsIgnoreCase("LLAMAR_MET"))
+                            {
+                                System.out.println("EJ: Entro a Llamar Metodo");
+                                this.hacerLlamada(x, ambito);
+                            }
+                            else if(x.valor.equalsIgnoreCase("LLAMARHK"))
+                            {
+                                System.out.println("EJ: Entro a Llamar Haskell");
+                                if(existeHKGuardado(ambito, x.hijos.get(0).valor)){
+                                    List<Resultado> lst_parametros = new ArrayList();
+                                    for(NodoGK n : x.hijos.get(1).hijos)
+                                    {
+                                        aux3=this.evaluarExpresion(ambito, n);
+                                        if(aux3==null)
+                                        {
+                                            err.nuevoError("Expresion Invalida");
+                                            return;
+                                        }
+                                        lst_parametros.add(aux3);
+                                    }
+                                    LlamadasHK llamadas = new LlamadasHK(txtResultados);
+                                    aux2 = llamadas.generarLlamadaHK(x.hijos.get(0), lst_parametros);
+                                    if(aux2==null)
+                                    {
+                                        err.nuevoError("No se pudo realizar la llamada a Haskell");
+                                        return;
+                                    }
+                                    System.out.println("Parece que funciono la Llamada a HK");
+                                }
+                                else
+                                {
+                                    err.nuevoErrorSemantico(x.hijos.get(0).linea, x.hijos.get(0).columna, "No fue declarada anteriormente la llamada a Haskell, "+x.hijos.get(0).valor);
+                                    return;
+                                }
+                            }
+                            else if(x.valor.equalsIgnoreCase("ACCESOBJ"))
+                            {
+                                //CUANDO VOY A LLAMAR A UN METODO DE UN OBJETO
+                                System.out.println("EX: Entro Acceso a Objeto, variable");
+                                int size = x.hijos.get(1).hijos.size();
+                                if(x.hijos.get(1).hijos.get(size-1).valor.equalsIgnoreCase("LLAMAR_MET"))
+                                {
+                                    err.nuevoError("Para acceder a una llamada de metodo, debe colocar la palabra llamar.");
+                                    return;
+                                }
+                                aux3=this.accesoObjetos(ambito, x);
+                                if(aux3==null)
+                                {
+                                    err.nuevoError("No se pudo acceder al objeto");
+                                    return;
+                                }
+                            }
+                            else if(x.valor.equalsIgnoreCase("ACCESOBJ_LLAMADA"))
+                            {
+                                //CUANDO VOY A LLAMAR A UN METODO DE UN OBJETO
+                                System.out.println("EX: Entro Acceso a Objeto, Llamada a Metodo");
+                                int size = x.hijos.get(1).hijos.size();
+                                if(!x.hijos.get(1).hijos.get(size-1).valor.equalsIgnoreCase("LLAMAR_MET"))
+                                {
+                                    err.nuevoError("El ultimo acceso debe de ser una variable o arreglo");
+                                    return;
+                                }
+                                aux3=this.accesoObjetos(ambito, x);
+                                if(aux3==null)
+                                {
+                                    err.nuevoError("No se pudo realizar el acceso al objeto");
+                                    return;
+                                }
+                            }
+                            else if(x.valor.equalsIgnoreCase("GRAFICAR"))
+                            {
+                                System.out.println("Entro a Graficar");
                                 aux2 = this.evaluarExpresion(ambito, x.hijos.get(0));
                                 if(aux2==null)
                                 {
+                                    err.nuevoError("Expresion Invalida");
                                     return;
                                 }
-                                TablaResultados tableres = new TablaResultados();
-                                tableres.cargarModeloDonde(x, aux3, aux2, columnas);
-                                tableres.setVisible(true);
-                            }
-                            else if(x.hijos.get(1).valor.equalsIgnoreCase("DONDECADA"))
-                            {
-                                System.out.println("EJ: Entro a DondeCada");
-                                aux3=this.evaluarExpresion(ambito, x.hijos.get(1).hijos.get(0));
+                                aux3 = this.evaluarExpresion(ambito, x.hijos.get(1));
                                 if(aux3==null)
                                 {
+                                    err.nuevoError("Expresion Invalida");
                                     return;
                                 }
-                                if(!aux3.tipogk.equalsIgnoreCase("entero")){ return ;}
-                                int columna = aux3.valgk;
-                                TablaResultados tablares = new TablaResultados();
-                                for(int i=0; i<CargarCSV.modelo.getRowCount(); i++)
+                                if(aux2.arreglo && aux3.arreglo)
                                 {
-                                    Vector prueba = CargarCSV.getInstance().consultaDondeCada(new Resultado("entero", i));
-                                    if(prueba==null)
+                                    if(aux2.tipogk.equalsIgnoreCase(aux3.tipogk))
                                     {
-                                        return;
+                                        if(aux2.totalgk==aux3.totalgk)
+                                        {
+                                            Graficar grafica = Graficar.getInstance();
+                                            grafica.addSerie(aux2.elementosArreglo, aux3.elementosArreglo, String.valueOf(keySeries));
+                                            grafica.personalizarGrafica();
+                                            grafica.mostrarGrafica();
+                                            grafica.pack();
+                                            RefineryUtilities.centerFrameOnScreen(grafica);// TODO add your handling code here:
+                                            grafica.setVisible(true);
+                                        }
                                     }
-                                    aux3=(Resultado)prueba.get(columna);
-                                    vectorActual=prueba;
-                                    columnas=new ArrayList();
-                                    aux2=this.evaluarExpresion(ambito, x.hijos.get(0));
-                                    if(aux2==null)
-                                    {
-                                        return;
-                                    }
-                                    if(i==0)
-                                    {
-                                        tablares.cargarModeloDondeCada(x,columnas);
-                                    }
-                                    tablares.insertarFilas(aux3, aux2);
                                 }
-                                tablares.setVisible(true);
+                                keySeries++;
                             }
-                            else if(x.hijos.get(1).valor.equalsIgnoreCase("DONDETODO"))
+                            else if(x.valor.equalsIgnoreCase("IMPRIMIR"))
                             {
-                                System.out.println("EJ: Entro a DondeTodo");
-                                List<Resultado> valores = new ArrayList();
-                                aux3=this.evaluarExpresion(ambito, x.hijos.get(1).hijos.get(0));
-                                if(aux3==null)
+                                System.out.println("EJ: Entro a Imprimir");
+                                imprimirPantalla(ambito, x);
+                            }
+                            else if(x.valor.equalsIgnoreCase("PROCESAR"))
+                            {
+                                System.out.println("EJ: Entro a Procesar");
+                                if(x.hijos.get(1).valor.equalsIgnoreCase("DONDE"))
                                 {
-                                    return;
-                                }
-                                if(!aux3.tipogk.equalsIgnoreCase("entero")){ return ;}
-                                TablaResultados tablares = new TablaResultados();
-                                for(int i=0; i<CargarCSV.modelo.getRowCount(); i++)
-                                {
-                                    Vector prueba = CargarCSV.getInstance().consultaDondeCada(new Resultado("entero", i));
+                                    //PRIMERO VOY A TRAER LA FILA DEL FILTRO
+                                    System.out.println("EJ: Entro a Donde");
+                                    aux2= this.evaluarExpresion(ambito, x.hijos.get(1).hijos.get(0));
+                                    aux3= this.evaluarExpresion(ambito, x.hijos.get(1).hijos.get(1));
+                                    Vector prueba = CargarCSV.getInstance().consultaDonde(aux2, aux3);
                                     if(prueba==null)
                                     {
+                                        err.nuevoError("No se pudo obtener el vector de Donde");
                                         return;
                                     }
                                     vectorActual=prueba;
-                                    columnas=new ArrayList();
-                                    aux2=this.evaluarExpresion(ambito, x.hijos.get(0));
+                                    columnas = new ArrayList();
+                                    aux2 = this.evaluarExpresion(ambito, x.hijos.get(0));
                                     if(aux2==null)
                                     {
+                                        err.nuevoError("Expresion Invalida");
                                         return;
                                     }
-                                    valores.add(aux2);
+                                    TablaResultados tableres = new TablaResultados();
+                                    tableres.cargarModeloDonde(x, aux3, aux2, columnas);
+                                    tableres.setVisible(true);
                                 }
-                                aux3= this.sumarTodo(valores);
-                                if(aux3==null){ return; }
-                                tablares.cargarModeloDondeTodo(x, columnas, aux3);
-                                tablares.setVisible(true);
+                                else if(x.hijos.get(1).valor.equalsIgnoreCase("DONDECADA"))
+                                {
+                                    System.out.println("EJ: Entro a DondeCada");
+                                    aux3=this.evaluarExpresion(ambito, x.hijos.get(1).hijos.get(0));
+                                    if(aux3==null)
+                                    {
+                                        err.nuevoError("Expresion Invalida");
+                                        return;
+                                    }
+                                    if(!aux3.tipogk.equalsIgnoreCase("entero")){ return ;}
+                                    int columna = aux3.valgk;
+                                    TablaResultados tablares = new TablaResultados();
+                                    for(int i=0; i<CargarCSV.modelo.getRowCount(); i++)
+                                    {
+                                        Vector prueba = CargarCSV.getInstance().consultaDondeCada(new Resultado("entero", i));
+                                        if(prueba==null)
+                                        {
+                                            err.nuevoError("No se pudo obtener el vector de Donde Cada");
+                                            return;
+                                        }
+                                        aux3=(Resultado)prueba.get(columna);
+                                        vectorActual=prueba;
+                                        columnas=new ArrayList();
+                                        aux2=this.evaluarExpresion(ambito, x.hijos.get(0));
+                                        if(aux2==null)
+                                        {
+                                            err.nuevoError("Expresion Invalida");
+                                            return;
+                                        }
+                                        if(i==0)
+                                        {
+                                            tablares.cargarModeloDondeCada(x,columnas);
+                                        }
+                                        tablares.insertarFilas(aux3, aux2);
+                                    }
+                                    tablares.setVisible(true);
+                                }
+                                else if(x.hijos.get(1).valor.equalsIgnoreCase("DONDETODO"))
+                                {
+                                    System.out.println("EJ: Entro a DondeTodo");
+                                    List<Resultado> valores = new ArrayList();
+                                    aux3=this.evaluarExpresion(ambito, x.hijos.get(1).hijos.get(0));
+                                    if(aux3==null)
+                                    {
+                                        err.nuevoError("Expresion Invalida");
+                                        return;
+                                    }
+                                    if(!aux3.tipogk.equalsIgnoreCase("entero")){ return ;}
+                                    TablaResultados tablares = new TablaResultados();
+                                    for(int i=0; i<CargarCSV.modelo.getRowCount(); i++)
+                                    {
+                                        Vector prueba = CargarCSV.getInstance().consultaDondeCada(new Resultado("entero", i));
+                                        if(prueba==null)
+                                        {
+                                            err.nuevoError("No se pudo obtener el vector de Donde Todo");
+                                            return;
+                                        }
+                                        vectorActual=prueba;
+                                        columnas=new ArrayList();
+                                        aux2=this.evaluarExpresion(ambito, x.hijos.get(0));
+                                        if(aux2==null)
+                                        {
+                                            err.nuevoError("Expresion Invalida");
+                                            return;
+                                        }
+                                        valores.add(aux2);
+                                    }
+                                    aux3= this.sumarTodo(valores);
+                                    if(aux3==null)
+                                    {
+                                        err.nuevoError("No se pudo sumar todas las expresiones de donde todo");
+                                        return; 
+                                    }
+                                    tablares.cargarModeloDondeTodo(x, columnas, aux3);
+                                    tablares.setVisible(true);
+                                }
                             }
-                        }
-                        else if(x.valor.equalsIgnoreCase("aumento"))
-                        {
-                            System.out.println("EJ: Entro a aumento");
-                            aux3=this.evaluarExpresion(ambito, x.hijos.get(0));
-                            if(aux3==null)
+                            else if(x.valor.equalsIgnoreCase("aumento"))
                             {
-                                return; 
+                                System.out.println("EJ: Entro a aumento");
+                                aux3=this.evaluarExpresion(ambito, x.hijos.get(0));
+                                if(aux3==null)
+                                {
+                                    err.nuevoError("Expresion Invalida");
+                                    return; 
+                                }
+                                aux2=this.evaluarAumento(ambito, aux3);
+                                if(aux2==null)
+                                {
+                                    err.nuevoError("No se pudo realizar el aumento");
+                                    return;
+                                }
                             }
-                            aux2=this.evaluarAumento(ambito, aux3);
-                            if(aux2==null)
+                            else if(x.valor.equalsIgnoreCase("decremento"))
                             {
-                                return;
-                            }
-                        }
-                        else if(x.valor.equalsIgnoreCase("decremento"))
-                        {
-                            System.out.println("EJ: Entro a decremento");
-                            aux3=this.evaluarExpresion(ambito, x.hijos.get(0));
-                            if(aux3==null)
-                            {
-                                return; 
-                            }
-                            aux2=this.evaluarDecremento(ambito, aux3);
-                            if(aux2==null)
-                            {
-                                return;
+                                System.out.println("EJ: Entro a decremento");
+                                aux3=this.evaluarExpresion(ambito, x.hijos.get(0));
+                                if(aux3==null)
+                                {
+                                    err.nuevoError("Expresion Invalida");
+                                    return; 
+                                }
+                                aux2=this.evaluarDecremento(ambito, aux3);
+                                if(aux2==null)
+                                {
+                                    err.nuevoError("No se pudo realizar el decremento");
+                                    return;
+                                }
                             }
                         }
                     }
@@ -3228,6 +3569,7 @@ public class EjecutarGK {
             }
             else
             {
+                err.nuevoError("No se puede sumar un tipo diferente de entero y decimal, en donde todo");
                 return null;
             }
         }
@@ -3282,6 +3624,7 @@ public class EjecutarGK {
                     return content;
 
                 default:
+                    err.nuevoError("Tipo de dato de aumento invalido");
                     //Error
                     break;
             }
@@ -3315,6 +3658,7 @@ public class EjecutarGK {
                     return content;
 
                 default:
+                    err.nuevoErrorSemantico(simGeneral.linea, simGeneral.columna, "La variable por su tipo no puede realizar aumento");
                     return null;
             }
         }
@@ -3335,6 +3679,7 @@ public class EjecutarGK {
                     return content;
 
                 default:
+                    err.nuevoError("No se puede realizar aumento en un tipo cadena");
                     //Error
                     break;
             }
@@ -3364,6 +3709,7 @@ public class EjecutarGK {
 
                 default:
                     //Error
+                    err.nuevoError("No se puede realizar decremento en un tipo cadena u objeto");
                     break;
             }
         }
@@ -3396,6 +3742,7 @@ public class EjecutarGK {
                     return content;
 
                 default:
+                    err.nuevoErrorSemantico(simGeneral.linea, simGeneral.columna, "La variable por su tipo no puede realizar aumento");
                     return null;
             }
         }
@@ -3417,6 +3764,7 @@ public class EjecutarGK {
 
                 default:
                     //Error
+                    err.nuevoError("No es permitido realizar decremento en un tipo cadena u objeto");
                     break;
             }
         }
@@ -3430,6 +3778,7 @@ public class EjecutarGK {
         aux3=this.evaluarExpresion(ambito, nodo.hijos.get(0));
         if(aux3==null)
         {
+            err.nuevoError("Expresion Invalida");
             return;
         }
         imprimirConsola(aux3.valorgk);
@@ -3452,6 +3801,7 @@ public class EjecutarGK {
         if(aux3==null || !aux3.tipogk.equalsIgnoreCase("bool"))
         {
             //ERROR DE TIPO BOOL
+            err.nuevoError("IF: Necesita un tipo de expresion booleano");
             return;
         }
         if(aux3.tipogk.equalsIgnoreCase("bool") && aux3.valBool)
@@ -3472,6 +3822,7 @@ public class EjecutarGK {
         aux3=this.evaluarExpresion(ambito, nodo.hijos.get(0).hijos.get(0));
         if(aux3==null || !aux3.tipogk.equalsIgnoreCase("bool"))
         {
+            err.nuevoError("Expresion Invalida");
             return;
         }
         if(aux3.tipogk.equalsIgnoreCase("bool") && aux3.valBool)
@@ -3548,7 +3899,7 @@ public class EjecutarGK {
         aux1 = this.evaluarExpresion(ambito, nodo.hijos.get(0));
         if(aux1==null)
         {
-        
+            err.nuevoError("Expresion Invalida");
         }
         for(int i=0; i<nodo.hijos.get(1).hijos.size(); i++)
         {
@@ -3666,11 +4017,13 @@ public class EjecutarGK {
         bien = this.DeclaraAsignaPara(ambito, nodo.hijos.get(0));
         if(!bien)
         {
+            err.nuevoError("No se pudo realizar la declaracion y asignacion del para");
             return;
         }
         aux1 = this.evaluarExpresion(ambito, nodo.hijos.get(1));
         if(aux1==null || !aux1.tipogk.equalsIgnoreCase("bool"))
         {
+            err.nuevoError("PARA: El tipo de expresion del para debe de ser booleano");
             return;
         }
         while(aux1.valBool)
@@ -3688,11 +4041,13 @@ public class EjecutarGK {
                     bien = operacionPara(ambito, nodo.hijos.get(2));
                     if(!bien)
                     {
+                        err.nuevoError("No se puedo realizar la operacion del para");
                         return;
                     }
                     aux1=this.evaluarExpresion(ambito, nodo.hijos.get(1));
                     if(aux1==null || aux1.tipogk.equalsIgnoreCase("bool"))
                     {
+                        err.nuevoError("PARA: El tipo de expresion del para debe de ser booleano");
                         return;
                     }
                     continue;
@@ -3705,11 +4060,13 @@ public class EjecutarGK {
             bien = operacionPara(ambito, nodo.hijos.get(2));
             if(!bien)
             {
+                err.nuevoError("No se pudo realizar la operacion del para");
                 return;
             }
             aux1=this.evaluarExpresion(ambito, nodo.hijos.get(1));
             if(aux1==null || !aux1.tipogk.equalsIgnoreCase("bool"))
             {
+                err.nuevoError("PARA: El tipo de expresion del para debe de ser booleano");
                 return;
             }
             this.borrarVariables(ambito);
@@ -3732,6 +4089,7 @@ public class EjecutarGK {
             bien=this.AsignaVariable(ambito, nodo);
             if(!bien)
             {
+                err.nuevoError("No se pudo realizar la Asignacion del para");
                 return false;
             }
         }
@@ -3760,6 +4118,7 @@ public class EjecutarGK {
             aux3 = this.evaluarExpresion(ambito, nodo);
             if(aux3==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return false;
             }
             return true;
@@ -3770,6 +4129,7 @@ public class EjecutarGK {
             bien=this.AsignaVariable(ambito, nodo);
             if(!bien)
             {
+                err.nuevoError("No se puede realizar la asignacion del para");
                 return false;
             }
             return true;
@@ -3784,26 +4144,31 @@ public class EjecutarGK {
         aux3=this.evaluarExpresion(ambito, nodo.hijos.get(3));
         if(aux3==null)
         {
+            err.nuevoError("Expresion Invalida");
             return false;
         }
         aux1=this.existeVariable(ambito, nodo.hijos.get(1));
         if(aux1==null)
         {
+            err.nuevoErrorSemantico(nodo.hijos.get(1).linea, nodo.hijos.get(1).columna, "La variable "+nodo.hijos.get(1).valor+ " no ha sido declarada");
             return false;
         }
         aux4=this.tipoIdentificador(aux1);
         if(aux4==null)
         {
+            err.nuevoErrorSemantico(nodo.hijos.get(1).linea, nodo.hijos.get(1).columna, "La variable "+nodo.hijos.get(1).valor+ " no se pudo encontrar su tipo");
             return false;
         }
         aux2=this.evaluarAsignacion(aux4.tipogk, aux3);
         if(aux2==null)
         {
+            err.nuevoErrorSemantico(nodo.hijos.get(1).linea, nodo.hijos.get(1).columna, "A la variable "+nodo.hijos.get(1).valor+ " no se le puede asignar un tipo"+aux3.tipogk);
             return false;
         }
         bien=this.modificarValor(ambito, nodo.hijos.get(1), aux2);
         if(!bien)
         {
+            err.nuevoErrorSemantico(nodo.hijos.get(1).linea, nodo.hijos.get(1).columna, "No se pudo modificar el valor de la variable "+nodo.hijos.get(1).valor);
             return false;
         }
         return bien;
@@ -3817,11 +4182,13 @@ public class EjecutarGK {
         aux1=this.existeVariable(ambito, nodo.hijos.get(0));
         if(aux1==null)
         {
+            err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "La variable "+nodo.hijos.get(1).valor+ " no ha sido declarada.");
             return false;
         }
         aux3=this.evaluarExpresion(ambito, nodo.hijos.get(1));
         if(aux3==null)
         {
+            err.nuevoError("Expresion Invalida");
             return false;
         }
         aux4=this.tipoIdentificador(aux1);
@@ -3832,11 +4199,13 @@ public class EjecutarGK {
         aux2=this.evaluarAsignacion(aux4.tipogk, aux3);
         if(aux2==null)
         {
+            err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "A la variable "+nodo.hijos.get(0).valor+" no se le puede asignar un tipo "+aux3.tipogk);
             return false;
         }
         bien=this.modificarValor(ambito, nodo.hijos.get(0),aux2);
         if(!bien)
         {
+            err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "No se pudo modificar el valor de la variable "+nodo.hijos.get(0).valor);
             return false;
         }
         return bien;
@@ -3848,6 +4217,7 @@ public class EjecutarGK {
         variable = this.existeVariable(ambito, nombre);
         if(variable==null)
         {
+            err.nuevoErrorSemantico(nombre.linea, nombre.columna, "La variable "+nombre.valor+" no ha sido declarada");
             return false;
         }
         variable.setValor(val);
@@ -3867,10 +4237,11 @@ public class EjecutarGK {
         Resultado parametro = null;
         try {
                 ClonarCosas clonar = new ClonarCosas();    
-                //metodo = clonar.clonarMetodoRecursivo(existeMetodo(ambito, idmetodo).clone());
-                metodo = existeMetodo(ambito, idmetodo).clone();
+                metodo = clonar.clonarMetodoRecursivo(existeMetodo(ambito, idmetodo).clone());
+                //metodo = existeMetodo(ambito, idmetodo).clone();
                 if(metodo==null)
                 {
+                    err.nuevoError("No se encontro el metodo");
                     return null;
                 }
             } catch (CloneNotSupportedException ex) {
@@ -3910,10 +4281,12 @@ public class EjecutarGK {
                     }
                 }
             }
+            this.actual.push(metodo);
             this.ambito.push(metodo.getAmbito()+"-"+metodo.getId());
             this.bandera.push(false);
             this.recorrido((String)this.ambito.peek(), metodo.getSentencias());
             this.ambito.pop();
+            this.actual.pop();
             this.bandera.pop();
             ambito=(String)this.ambito.peek();
             if(valorRetorno==null)
@@ -3943,11 +4316,11 @@ public class EjecutarGK {
                     metodo.setRetorno(res);    
                     break;
             }
+            retorna=false;
             return valorRetorno;
         }
         else
         {
-        
         }
         return null;
     }
@@ -3963,11 +4336,19 @@ public class EjecutarGK {
             metodo = clase.metodos.get(nombre);
             return metodo;
         }
-        else if(clase.getHereda().metodos.containsKey(nombre))
+        else if(clase.getHereda()!=null)
         {
-            metodo = clase.getHereda().metodos.get(nombre);
+            if(clase.getHereda().metodos.containsKey(nombre))
+            {
+                metodo = clase.getHereda().metodos.get(nombre);
+            }
+            return metodo;
         }
-        return metodo;
+        else
+        {
+            err.nuevoError("El metodo "+nombre+" nunca fue declarado");
+            return null;
+        }
     }
     
     
@@ -4009,7 +4390,8 @@ public class EjecutarGK {
     private void agregarVariable(String ambito, NodoGK nodo, int opc)
     {
         MetodoGK metodo;
-        metodo=this.retornarMetodo(ambito);
+        //metodo=this.retornarMetodo(ambito);
+        metodo = (MetodoGK) this.actual.peek();
         if(metodo==null)
         {
             return;
@@ -4030,9 +4412,11 @@ public class EjecutarGK {
     private void agregarArreglo(String ambito, NodoGK nodo)
     {
         MetodoGK metodo;
-        metodo=this.retornarMetodo(ambito);
+        //metodo=this.retornarMetodo(ambito);
+        metodo = (MetodoGK) this.actual.peek();
         if(metodo==null)
         {
+            err.nuevoError("No existe un metodo actual");
             return;
         }
         this.hacerDeclaracionArr(metodo, nodo, ambito);
@@ -4063,6 +4447,7 @@ public class EjecutarGK {
                         }
                         else
                         {
+                            err.nuevoErrorSemantico(linea.get(contador), columna.get(contador), "La variable "+nueva_variable.getId()+" ya ha sido declarada");
                         }
                         break;
                     case "cadena":
@@ -4079,6 +4464,7 @@ public class EjecutarGK {
                         }
                         else
                         {
+                            err.nuevoErrorSemantico(linea.get(contador), columna.get(contador), "La variable "+nueva_variable.getId()+" ya ha sido declarada");
                         }
                         break;
                     case "caracter":
@@ -4095,6 +4481,7 @@ public class EjecutarGK {
                         }
                         else
                         {
+                            err.nuevoErrorSemantico(linea.get(contador), columna.get(contador), "La variable "+nueva_variable.getId()+" ya ha sido declarada");
                         }
                         break;
                     case "bool":
@@ -4112,6 +4499,7 @@ public class EjecutarGK {
                         }
                         else
                         {
+                            err.nuevoErrorSemantico(linea.get(contador), columna.get(contador), "La variable "+nueva_variable.getId()+" ya ha sido declarada");
                         }
                         break;
                     case "decimal":
@@ -4128,6 +4516,7 @@ public class EjecutarGK {
                         }
                         else
                         {
+                            err.nuevoErrorSemantico(linea.get(contador), columna.get(contador), "La variable "+nueva_variable.getId()+" ya ha sido declarada");
                         }
                         break;
                     default:
@@ -4144,6 +4533,7 @@ public class EjecutarGK {
                         }
                         else
                         {
+                            err.nuevoErrorSemantico(linea.get(contador), columna.get(contador), "La variable "+nueva_variable.getId()+" ya ha sido declarada");
                         }
                         break;
                 }
@@ -4161,6 +4551,7 @@ public class EjecutarGK {
                     aux3=this.evaluarExpresion(ambito_variable, raiz.hijos.get(3));
                     if(aux3==null)
                     {
+                        err.nuevoError("Expresion Invalida");
                         return;
                     }
                     nueva_variable = new SimboloGK("entero", raiz.hijos.get(1).valor, aux3, ambito_variable, 0);
@@ -4175,13 +4566,15 @@ public class EjecutarGK {
                             lista.add(nueva_variable.getId());
                     } 
                     else {
-                            //ERROR YA EXISTE
+                        //ERROR YA EXISTE
+                        err.nuevoErrorSemantico(raiz.hijos.get(1).getLinea(), raiz.hijos.get(1).getColumna(), "La variable "+nueva_variable.getId()+" ya ha sido declarada");
                     }
                     break;
                 case "cadena":
                     aux3=this.evaluarExpresion(ambito_variable, raiz.hijos.get(3));
                     if(aux3==null)
                     {
+                        err.nuevoError("Expresion Invalida");
                         return;
                     }
                     nueva_variable = new SimboloGK("cadena", raiz.hijos.get(1).valor, aux3, ambito_variable, 0);
@@ -4196,13 +4589,15 @@ public class EjecutarGK {
                             lista.add(nueva_variable.getId());
                     } 
                     else {
-                            //ERROR YA EXISTE
+                        //ERROR YA EXISTE
+                        err.nuevoErrorSemantico(raiz.hijos.get(1).getLinea(), raiz.hijos.get(1).getColumna(), "La variable "+nueva_variable.getId()+" ya ha sido declarada");
                     }
                     break;
                 case "caracter":
                     aux3=this.evaluarExpresion(ambito_variable, raiz.hijos.get(3));
                     if(aux3==null)
                     {
+                        err.nuevoError("Expresion Invalida");
                         return;
                     }
                     nueva_variable = new SimboloGK("caracter", raiz.hijos.get(1).valor, aux3, ambito_variable, 0);
@@ -4217,13 +4612,15 @@ public class EjecutarGK {
                             lista.add(nueva_variable.getId());
                     } 
                     else {
-                            //ERROR YA EXISTE
+                        err.nuevoErrorSemantico(raiz.hijos.get(1).getLinea(), raiz.hijos.get(1).getColumna(), "La variable "+nueva_variable.getId()+" ya ha sido declarada");
+                        //ERROR YA EXISTE
                     }
                     break;
                 case "bool":
                     aux3=this.evaluarExpresion(ambito_variable, raiz.hijos.get(3));
                     if(aux3==null)
                     {
+                        err.nuevoError("Expresion Invalida");
                         return;
                     }
                     nueva_variable = new SimboloGK("bool", raiz.hijos.get(1).valor, aux3, ambito_variable, 0);
@@ -4238,13 +4635,15 @@ public class EjecutarGK {
                             lista.add(nueva_variable.getId());
                     } 
                     else {
-                            //ERROR YA EXISTE
+                        err.nuevoErrorSemantico(raiz.hijos.get(1).getLinea(), raiz.hijos.get(1).getColumna(), "La variable "+nueva_variable.getId()+" ya ha sido declarada");
+                        //ERROR YA EXISTE
                     }
                     break;
                 case "decimal":
                     aux3=this.evaluarExpresion(ambito_variable, raiz.hijos.get(3));
                     if(aux3==null)
                     {
+                        err.nuevoError("Expresion Invalida");
                         return;
                     }
                     nueva_variable = new SimboloGK("decimal", raiz.hijos.get(1).valor,aux3, ambito_variable, 0);
@@ -4259,13 +4658,15 @@ public class EjecutarGK {
                             lista.add(nueva_variable.getId());
                     } 
                     else {
-                            //ERROR YA EXISTE
+                        err.nuevoErrorSemantico(raiz.hijos.get(1).getLinea(), raiz.hijos.get(1).getColumna(), "La variable "+nueva_variable.getId()+" ya ha sido declarada");
+                        //ERROR YA EXISTE
                     }
                     break;
                 default:
                     aux3=this.evaluarExpresion(ambito_variable, raiz.hijos.get(3));
                     if(aux3==null)
                     {
+                        err.nuevoError("Expresion Invalida");
                         return;
                     }
                     nueva_variable = new SimboloGK(raiz.hijos.get(0).valor, raiz.hijos.get(1).valor, aux3, ambito_variable, 0);
@@ -4280,7 +4681,8 @@ public class EjecutarGK {
                             lista.add(nueva_variable.getId());
                     } 
                     else {
-                            //ERROR YA EXISTE
+                        err.nuevoErrorSemantico(raiz.hijos.get(1).getLinea(), raiz.hijos.get(1).getColumna(), "La variable "+nueva_variable.getId()+" ya ha sido declarada");
+                        //ERROR YA EXISTE
                     }
                     break;
             }
@@ -4316,9 +4718,11 @@ public class EjecutarGK {
 
     private void borrarVariables(String ambito) {
         MetodoGK metodo;
-        metodo=this.retornarMetodo(ambito);
+        //metodo=this.retornarMetodo(ambito);
+        metodo = (MetodoGK) this.actual.peek();
         if(metodo==null)
         {
+            err.nuevoError("No hay ningun metodo en actual");
             return;
         }
         List<String> lista = (List<String>)this.variables.peek();
@@ -4352,11 +4756,13 @@ public class EjecutarGK {
                         }
                         else
                         {
+                            err.nuevoErrorSemantico(nodo.linea, nodo.columna, "No puede acceder a un privado en la herencia");
                             return null;
                         }
                     }
                     else
                     {
+                        
                         return null;
                     }
                 }
@@ -4369,6 +4775,7 @@ public class EjecutarGK {
                     }
                     else
                     {
+                        err.nuevoErrorSemantico(nodo.linea, nodo.columna, "No puede acceder a un privado en la herencia");
                         return null;
                     }
                 }
@@ -4382,6 +4789,28 @@ public class EjecutarGK {
                 }
                 else
                 {
+                    err.nuevoErrorSemantico(nodo.linea, nodo.columna, "No se puede acceder a un privado en la herencia");
+                    return null;
+                }
+            }
+        }
+        else
+        {
+            if(clase.getHereda()!=null)
+            {
+                SimboloGK reg = this.buscarVariablesLocalesHereda(nombre, clase.getHereda(), nodo);
+                if(reg==null)
+                {
+                    err.nuevoErrorSemantico(nodo.linea, nodo.columna, "No se encontro la variable "+nodo.valor);
+                    return null;
+                }
+                if(reg.getVisibilidad().equalsIgnoreCase("publico") || reg.getVisibilidad().equalsIgnoreCase("protegido"))
+                {
+                    return reg;
+                }
+                else
+                {
+                    err.nuevoErrorSemantico(nodo.linea, nodo.columna, "No se puede acceder a un privado en la herencia");
                     return null;
                 }
             }
@@ -4399,9 +4828,37 @@ public class EjecutarGK {
             {
                 return registro;
             }
+            else
+            {
+                err.nuevoErrorSemantico(nodo.linea, nodo.columna, "No se puede acceder a un privado en la herencia");
+                return null;
+            }
+        }
+        else
+        {
+            if(clase.getHereda()!=null)
+            {
+                SimboloGK reg = this.buscarVariablesGlobalesHereda(clase.getHereda(), nodo);
+                if(reg==null)
+                {
+                    err.nuevoErrorSemantico(nodo.linea, nodo.columna, "No se encontro la variable "+ nodo.valor);
+                    return null;
+                }
+                if(reg.getVisibilidad().equalsIgnoreCase("publico") || reg.getVisibilidad().equalsIgnoreCase("protegido"))
+                {
+                    return reg;
+                }
+                else
+                {
+                    err.nuevoErrorSemantico(nodo.linea, nodo.columna, "No se encontro la variale "+nodo.valor);
+                    return null;
+                }
+            }
         }
         return null;
     }
+    
+    
     
     private void decArray(String ambito, NodoGK nodo)
     {
@@ -4414,6 +4871,7 @@ public class EjecutarGK {
         variable = this.existeVariable(ambito, nodo.hijos.get(1));
         if(variable==null)
         {
+            err.nuevoErrorSemantico(nodo.hijos.get(1).linea, nodo.hijos.get(1).columna, "La variable "+ nodo.hijos.get(1).valor + " no ha sido declarada");
             return;
         }
         if(variable.getRol().equals("arr"))
@@ -4447,6 +4905,7 @@ public class EjecutarGK {
             aux3=this.evaluarExpresion(ambito, n);
             if(aux3==null)
             {
+                err.nuevoError("Expresion Invalida");
                 return null;
             }
             if(aux3.tipogk.equals("entero"))
@@ -4461,6 +4920,7 @@ public class EjecutarGK {
             }
             else
             {
+                err.nuevoError("En un arreglo solo se aceptan dimensiones enteras");
                 //ERROR SOLO TIENE QUE SER DIMENSIONES ENTERAS
                 return null;
             }
@@ -4479,15 +4939,18 @@ public class EjecutarGK {
             variable = this.existeVariable(ambito, nodo.hijos.get(1));
             if(variable == null)
             {
+                err.nuevoErrorSemantico(nodo.hijos.get(1).linea, nodo.hijos.get(1).columna, "La variable "+nodo.hijos.get(1).valor + " no ha sido declarada ");
                 return null;
             }
             if(!variable.getIsArreglo())
             {
+                err.nuevoErrorSemantico(nodo.hijos.get(1).linea, nodo.hijos.get(1).columna, "La variable "+nodo.hijos.get(1).valor+ " debe de ser tipo arreglo");
                 return null;
             }
             aux2=this.evaluarExpresion(ambito, nodo.hijos.get(4));
             if(aux2==null)
             {
+                err.nuevoErrorSemantico(nodo.hijos.get(1).linea, nodo.hijos.get(1).columna, "Expresion Invalida");
                 return null;
             }
             if(variable.getTipoVariable().equalsIgnoreCase(aux2.tipogk))
@@ -4498,11 +4961,13 @@ public class EjecutarGK {
                 }
                 else
                 {
+                    err.nuevoErrorSemantico(nodo.hijos.get(1).linea, nodo.hijos.get(1).columna, "Se esta tratando de asignar mas valores de los declarados");
                     return null;
                 }
             }
             else
             {
+                err.nuevoErrorSemantico(nodo.hijos.get(1).linea, nodo.hijos.get(1).columna, "Error de tipos: a un tipo "+variable.getTipoVariable()+" no se le puede asignar un tipo "+aux2.tipogk);
                 return null;
             }
         }
@@ -4562,6 +5027,7 @@ public class EjecutarGK {
                 aux1=this.evaluarExpresion(ambito, n);
                 if(aux1==null)
                 {
+                    err.nuevoError("Expresion Invalida");
                     return;
                 }
                 this.arregloInit.add(aux1);
@@ -4604,8 +5070,11 @@ public class EjecutarGK {
             nueva_variable.setN_dimensiones(raiz.hijos.get(2).hijos.size());
             if(!metodo.existeVar(nueva_variable.getId()) && !metodo.existePar(nueva_variable.getId())){
                 metodo.varLocales.put(nueva_variable.getId(), nueva_variable);
+                List<String> lista = (List<String>)this.variables.peek();
+                lista.add(nueva_variable.getId());
             } else {
                     //ERROR YA EXISTE
+                    err.nuevoErrorSemantico(raiz.hijos.get(1).getLinea(), raiz.hijos.get(1).getColumna(), "La variable "+ raiz.hijos.get(1).valor+ " ya fue declarada");
             }
             this.decArray(ambito, raiz);
         }
@@ -4623,15 +5092,18 @@ public class EjecutarGK {
         reg1=this.existeVariable(ambito, nodo.hijos.get(0));
         if(reg1==null)
         {
+            err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "La variable "+nodo.hijos.get(0).valor +" no ha sido declarada");
             return null;
         }
         if(!reg1.getRol().equalsIgnoreCase("arr"))
         {
+            err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "La variable debe de ser arreglo");
             return null;
         }
         total=this.getCadDimArray(ambito, nodo.hijos.get(1));
         if(total.equalsIgnoreCase(""))
         {
+            err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "Debe devolver un total");
             return null;
         }
         lNum=total.split("_");
@@ -4640,6 +5112,7 @@ public class EjecutarGK {
         i=lDim.length;
         if(i!=j)
         {
+            err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "Asignacion: OUT OF RANGE");
             return null;
         }
         for(int k=0; k<i; k++)
@@ -4650,11 +5123,13 @@ public class EjecutarGK {
         mapeo=this.mapeoLexicografico(coordenadas, dimensiones);
         if(mapeo>=reg1.getTotal() || mapeo<0)
         {
+            err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "Valor de mapeo lexicografico incorrecto");
             return null;
         }
         aux1=this.evaluarExpresion(ambito, nodo.hijos.get(2));
         if(aux1==null)
         {
+            err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "Expresion Invalida");
             return null;
         }
         Resultado content = (Resultado)reg1.getValor();
@@ -4677,6 +5152,7 @@ public class EjecutarGK {
                 aux1=this.evaluarExpresion(ambito, nodo);
                 if(aux1==null)
                 {
+                    err.nuevoError("Expresion Invalida");
                     return null;
                 }
                 if(aux1.tipogk.equalsIgnoreCase("entero")){
@@ -4690,6 +5166,7 @@ public class EjecutarGK {
                 }
                 else
                 {
+                    err.nuevoError("Todas las dimensiones deben de ser tipo entero");
                     return null;
                 }
             }
@@ -4709,11 +5186,13 @@ public class EjecutarGK {
         reg1=this.existeVariable(ambito, nodo.hijos.get(0));
         if(reg1==null)
         {
+            err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "La variable "+nodo.hijos.get(0).valor+ " no ha sido declarada");
             return null;
         }
         dim=this.getCadDimArray(ambito, nodo.hijos.get(1));
         if(dim=="")
         {
+            err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "No se encontraron dimensiones");
             return null;
         }
         lSc=dim.split("_");
@@ -4722,6 +5201,7 @@ public class EjecutarGK {
         j=lSm.length;
         if(i!=j)
         {
+            err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "No se tiene el mismo numero de dimensiones");
             return null;
         }
         for(int k=0; k<i; k++)
@@ -4732,6 +5212,7 @@ public class EjecutarGK {
         mapeo = this.mapeoLexicografico(lNi, lNm);
         if(mapeo>=reg1.getTotal() || mapeo<0)
         {
+            err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "Error de mapeo lexicografico");
             return null;
         }
         Resultado aux2 = (Resultado) reg1.getValor();
@@ -4774,10 +5255,12 @@ public class EjecutarGK {
         variable = this.existeVariable(ambito, nodo.hijos.get(1));
         if(variable==null)
         {
+            err.nuevoErrorSemantico(nodo.hijos.get(1).linea, nodo.hijos.get(1).columna, "La variable "+ nodo.hijos.get(1).valor+ " no ha sido declarada");
             return;
         }
         if(!variable.getTipoVariable().equals(nodo.hijos.get(0).valor))
         {
+            err.nuevoErrorSemantico(nodo.hijos.get(1).linea, nodo.hijos.get(1).columna, "Esta tratando de asignar diferentes tipos");
             return;
         }
         if(nodo.hijos.get(0).valor.equals(nodo.hijos.get(3).valor))
@@ -4795,18 +5278,24 @@ public class EjecutarGK {
                         asignacion = clonar.clonarClase(clase.clone());
                         if(asignacion==null)
                         {
+                            err.nuevoError("No se pudo clonar la clase, para la asignacion de objeto");
                             return;
                         }
+                        claseActual.push(asignacion.getId());
                         this.asignacionGlobales(asignacion.getVarGlobales(), asignacion.getNodo());
+                        claseActual.pop();
                         if(clase.getHereda()!=null)
                         {
                             ClaseGK hereda;
                             hereda = clonar.clonarClase(clase.getHereda().clone());
                             if(hereda == null)
                             {
+                                err.nuevoError("No se pudo clonar la clase, para el hereda de objeto");
                                 return;
                             }
+                            claseActual.push(hereda.getId());
                             this.asignacionGlobales(hereda.getVarGlobales(), hereda.getNodo());
+                            claseActual.pop();
                             asignacion.setHereda(hereda);
                         }
                         variable.setValor(asignacion);
@@ -4836,6 +5325,7 @@ public class EjecutarGK {
                 return true;
             }
         }
+        err.nuevoError("No existe importacion");
         return false;
     }
 
@@ -4845,14 +5335,16 @@ public class EjecutarGK {
         simGeneral = this.existeVariable(ambito, nodo.hijos.get(0));
         if(simGeneral==null)
         {
+            err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "La variable "+ nodo.hijos.get(0).valor + " no ha sido declarada");
             return null;
         }
         if(simGeneral.getRol().equalsIgnoreCase("obj"))
         {
             int pos = 0;
-            content = this.accesarRecursivo((ClaseGK)simGeneral.getValor(), nodo.hijos.get(1), pos, ambito);
+            content = this.accesarRecursivo((ClaseGK)simGeneral.getValor(), nodo.hijos.get(1), pos, ambito, nodo.hijos.get(1).hijos.size());
             if(content==null)
             {
+                err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "No se puede acceder al objeto de la variable "+ nodo.hijos.get(0).valor);
                 return null;
             }
             return content;
@@ -4860,7 +5352,7 @@ public class EjecutarGK {
         return null;
     }
     
-    private Resultado accesarRecursivo(ClaseGK clase , NodoGK nodo, int pos, String ambito)
+    private Resultado accesarRecursivo(ClaseGK clase , NodoGK nodo, int pos, String ambito, int total)
     {
         Resultado content;
         SimboloGK simGeneral;
@@ -4871,22 +5363,52 @@ public class EjecutarGK {
                 metodo = existeMetodo(clase, nodo.hijos.get(pos));
                 if(metodo==null)
                 {
+                    err.nuevoError("No se encontro el metodo");
                     return null;
                 }
-                content = this.hacerLlamada(nodo.hijos.get(pos), ambito);
+                content = this.hacerLlamada(nodo.hijos.get(pos), clase.getId());
                 if(content==null)
                 {
-                    return null;
+                    if(metodo.getRol().equalsIgnoreCase("met"))
+                    {
+                        return new Resultado();
+                    }
+                    else
+                    {
+                        err.nuevoError("La llamada retorno null");
+                        return null;
+                    }
+                    
                 }
                 if(content.value.equals("esObj"))
                 {
-                    pos=pos+1;
-                    content = this.accesarRecursivo(content.valObj, nodo, pos, content.tipogk);
-                    if(content==null)
+                    if(pos+1>=total)
                     {
+                        err.nuevoError("Error no se puede acceder porque no es objeto la siguiente dimension");
+                        return content;
+                    }
+                    else
+                    {
+                        content = this.accesarRecursivo(content.valObj, nodo, pos+1, content.tipogk, total);
+                        if(content==null)
+                        {
+                            err.nuevoError("No se pudo acceder al objeto");
+                            return null;
+                        }
+                        return content;
+                    }
+                }
+                else
+                {
+                    if(pos+1>=total)
+                    {
+                        return content;
+                    }
+                    else
+                    {
+                        err.nuevoError("El retorno no es objeto asi que no puede seguir accediendo");
                         return null;
                     }
-                    return content;
                 }
             }
             else
@@ -4894,32 +5416,87 @@ public class EjecutarGK {
                 simGeneral = existeVariable(clase, nodo.hijos.get(pos));
                 if(simGeneral==null)
                 {
+                    err.nuevoError("No se encontro la variable");
                     return null;
                 }
                 if(simGeneral.getRol().equalsIgnoreCase("obj"))
                 {
-                    this.accesarRecursivo((ClaseGK)simGeneral.getValor(), nodo, pos++, ambito);
+                    if(pos+1>=total)
+                    {
+                        Resultado aux = (Resultado)simGeneral.getValor();
+                        aux.value="esObj";
+                        aux.id_result=simGeneral.getId();
+                        return aux;
+                    }
+                    else{
+                        Resultado resu = this.accesarRecursivo((ClaseGK)simGeneral.getValor(), nodo, pos+1, simGeneral.getTipoVariable(), total);
+                        if(resu==null)
+                        {
+                            return null;
+                        }
+                        return resu;
+                    }
                 }
                 else
                 {
-                    return (Resultado)simGeneral.getValor();
+                    if(nodo.hijos.get(pos).valor.equals("AccesoArreglo"))
+                    {
+                        if(pos+1>=total)
+                        {
+                            err.nuevoError("Error, quiere acceder a otra dimension");
+                            return null;
+                        }
+                        else
+                        {
+                            content = this.getArrayObj(clase, nodo.hijos.get(pos), clase.getId());
+                            if(content==null)
+                            {
+                                err.nuevoError("No se pudo acceder al arreglo");
+                                return null;
+                            }
+                            return content;
+                        }
+                    }
+                    else
+                    {
+                        if(pos+1>=total)
+                        {
+                            Resultado devolver = (Resultado) simGeneral.getValor();
+                            return devolver;
+                        }
+                        else
+                        {
+                            err.nuevoError("Error, quiere acceder a otra dimension");
+                            return null;
+                        }
+                    }
                 }
             }
         }
         else{
-            //ERROR
+            err.nuevoError("Quiere acceder a otra dimension no debida");
+            return null;
         }
-        return null;
     }
     
     private SimboloGK existeVariable(ClaseGK clase, NodoGK nodo)
     {
         SimboloGK simGeneral;
-        if(clase.varGlobales.containsKey(nodo.valor))
+        String nombre="";
+        if(nodo.valor.equalsIgnoreCase("AccesoArreglo"))
         {
-            simGeneral=clase.varGlobales.get(nodo.valor);
+            nombre = nodo.hijos.get(0).valor;
+        }
+        else
+        {
+            nombre = nodo.valor;
+        }
+        if(clase.varGlobales.containsKey(nombre))
+        {
+            simGeneral=clase.varGlobales.get(nombre);
             if(simGeneral==null)
             {
+                err.nuevoError("No existe la variable en acceso a objetos");
                 return null;
             }
             if(simGeneral.getVisibilidad().equalsIgnoreCase("publico") || simGeneral.getVisibilidad().equalsIgnoreCase("protegido"))
@@ -4929,11 +5506,12 @@ public class EjecutarGK {
         }
         else
         {
-            if(clase.getHereda().varGlobales.containsKey(nodo.valor))
+            if(clase.getHereda().varGlobales.containsKey(nombre))
             {
-                simGeneral=clase.getHereda().varGlobales.get(nodo.valor);
+                simGeneral=clase.getHereda().varGlobales.get(nombre);
                 if(simGeneral==null)
                 {
+                    err.nuevoError("No existe la variable en acceso a objetos");
                     return null;
                 }
                 if(simGeneral.getVisibilidad().equalsIgnoreCase("publico") || simGeneral.getVisibilidad().equalsIgnoreCase("protegido"))
@@ -4960,6 +5538,7 @@ public class EjecutarGK {
             metodo = clase.metodos.get(idmetodo);
             if(metodo==null)
             {
+                err.nuevoError("No se encuentra la variable en acceso a objetos");
                 return null;
             }
             if(metodo.getVisibilidad().equalsIgnoreCase("publico") || metodo.getVisibilidad().equalsIgnoreCase("protegido"))
@@ -4969,19 +5548,457 @@ public class EjecutarGK {
         }
         else
         {
-            if(clase.getHereda().metodos.containsKey(idmetodo))
-            {
-                metodo=clase.getHereda().metodos.get(idmetodo);
-                if(metodo==null)
+            if(clase.getHereda()!=null){
+                if(clase.getHereda().metodos.containsKey(idmetodo))
                 {
-                    return null;
-                }
-                if(metodo.getVisibilidad().equalsIgnoreCase("publico") || metodo.getVisibilidad().equalsIgnoreCase("protegido"))
-                {
-                    return metodo;
+                    metodo=clase.getHereda().metodos.get(idmetodo);
+                    if(metodo==null)
+                    {
+                        err.nuevoError("No se encuentra la variable en acceso a objetos");
+                        return null;
+                    }
+                    if(metodo.getVisibilidad().equalsIgnoreCase("publico") || metodo.getVisibilidad().equalsIgnoreCase("protegido"))
+                    {
+                        return metodo;
+                    }
                 }
             }
         }
         return null;
+    }
+    
+    private SimboloGK asigAccesoObj(String ambito, NodoGK nodo)
+    {
+        Resultado content;
+        SimboloGK simGeneral, aux1;
+        boolean bien;
+        simGeneral = this.existeVariable(ambito, nodo.hijos.get(0).hijos.get(0));
+        if(simGeneral==null)
+        {
+            err.nuevoErrorSemantico(nodo.hijos.get(0).hijos.get(0).linea, nodo.hijos.get(0).hijos.get(0).columna, "La variable "+ nodo.hijos.get(0).hijos.get(0).valor + " no ha sido declarada");
+            return null;
+        }
+        if(simGeneral.getRol().equalsIgnoreCase("obj"))
+        {
+            int pos = 0;
+            aux1 = this.accesarAsignaObj((ClaseGK)simGeneral.getValor(), nodo.hijos.get(0).hijos.get(1), pos, ambito, nodo.hijos.get(0).hijos.get(1).hijos.size(), nodo.hijos.get(1));
+            if(aux1==null)
+            {
+                err.nuevoErrorSemantico(nodo.hijos.get(0).hijos.get(0).linea, nodo.hijos.get(0).hijos.get(0).columna, "Retorno null, algun problema hay");
+                return null;
+            }
+            return aux1;
+        }
+        return null;
+    }
+    
+    private SimboloGK accesarAsignaObj(ClaseGK clase, NodoGK nodo, int pos, String ambito, int total, NodoGK expresion)
+    {
+        Resultado content;
+        SimboloGK simGeneral, aux1;
+        MetodoGK metodo;
+        if(pos<nodo.hijos.size()){
+            if(nodo.hijos.get(pos).valor.equalsIgnoreCase("LLAMAR_MET"))
+            {
+                metodo = existeMetodo(clase, nodo.hijos.get(pos));
+                if(metodo==null)
+                {
+                    err.nuevoError("No existe metodo");
+                    return null;
+                }
+                content = this.hacerLlamada(nodo.hijos.get(pos), ambito);
+                if(content==null)
+                {
+                    if(metodo.getRol().equalsIgnoreCase("met"))
+                    {
+                        return new SimboloGK();
+                    }
+                    else
+                    {
+                        err.nuevoError("La llamada retorno null");
+                        return null;
+                    }
+                }
+                if(content.value.equals("esObj"))
+                {
+                    if(pos+1>total)
+                    {
+                        err.nuevoError("No se puiede acceder a la siguiente dimension");
+                        return null;
+                    }
+                    else{
+                        simGeneral = this.accesarAsignaObj(content.valObj, nodo, pos+1, content.tipogk, total, expresion);
+                        if(simGeneral==null)
+                        {
+                            err.nuevoError("No se pudo acceder al objeto");
+                            return null;
+                        }
+                        return simGeneral;
+                    }
+                }
+                else
+                {
+                    if(pos+1>=total)
+                    {
+                        //AQUI DEBO VER COMO RETORNO LA VARIABLE Y NO EL RESULTADO
+                    }
+                    else
+                    {
+                        err.nuevoError("El retorno no es objeto asi que no puede seguir accediendo");
+                        return null;
+                    }
+                }
+            }
+            else
+            {
+                simGeneral = existeVariable(clase, nodo.hijos.get(pos));
+                if(simGeneral==null)
+                {
+                    err.nuevoError("No se encontro la variable");
+                    return null;
+                }
+                if(simGeneral.getRol().equalsIgnoreCase("obj"))
+                {
+                    if(pos+1>=total)
+                    {
+                        return simGeneral;
+                    }
+                    else
+                    {
+                        aux1=this.accesarAsignaObj((ClaseGK)simGeneral.getValor(), nodo, pos+1, ambito, total, expresion);
+                        if(aux1==null)
+                        {
+                            err.nuevoError("No se pudo acceder al objeto");
+                            return null;
+                        }
+                    }
+                }
+                else
+                {
+                    if(nodo.hijos.get(pos).valor.equals("AccesoArreglo"))
+                    {
+                        //HAGO EL ARBOL Y REALIZO DE UNA VEZ LA ASIGNACION
+                        if(pos+1>=total)
+                        {
+                            NodoGK arr = new NodoGK("ASIGNA_ARR");
+                            arr.hijos.add(nodo.hijos.get(pos).hijos.get(0));
+                            arr.hijos.add(nodo.hijos.get(pos).hijos.get(1));
+                            arr.hijos.add(expresion);
+                            aux1 = this.asigArrayObj(clase, arr, clase.getId());
+                            if(aux1==null)
+                            {
+                                err.nuevoError("No se pudo realizar la asignacion del arreglo");
+                                return null;
+                            }
+                            return aux1;
+                        }
+                        else
+                        {
+                            err.nuevoError("No se puede acceder a un arreglo");
+                            return null;
+                        }
+                    }
+                    else
+                    {
+                        if(pos+1>=total)
+                        {
+                            aux1= this.asignaVariableObj(simGeneral, expresion, ambito);
+                            if(aux1==null)
+                            {
+                                err.nuevoError("No se pudo realizar la asignacion al objeto");
+                                return null;
+                            }
+                            return aux1;
+                        }
+                        else
+                        {
+                            err.nuevoError("No se puede acceder a una variable");
+                            return null;
+                        }
+                        
+                    }
+                }
+            }
+        }
+        else{
+            //ERROR
+            err.nuevoError("No se pudo acceder al objeto");
+        }
+        return null;       
+    }
+    
+    private SimboloGK asignaVariableObj(SimboloGK var, NodoGK expresion, String ambito)
+    {
+        Resultado aux3, aux4, aux2;
+        aux3=this.evaluarExpresion(ambito, expresion);
+        if(aux3==null)
+        {
+            err.nuevoError("Expresion Invalida");
+            return null;
+        }
+        aux4=this.tipoIdentificador(var);
+        if(aux4==null)
+        {
+            err.nuevoErrorSemantico(var.linea, var.columna, "No se pudo volver identificador");
+            return null;
+        }
+        aux2=this.evaluarAsignacion(aux4.tipogk, aux3);
+        if(aux2==null)
+        {
+            err.nuevoErrorSemantico(var.linea, var.columna, "A un tipo "+aux4.tipogk + " no se le puede asignar un tipo "+ aux3.tipogk);
+            return null;
+        }
+        var.setValor(aux2);
+        return var;
+    }
+    
+    private SimboloGK asigArrayObj(ClaseGK clase, NodoGK nodo, String ambito)
+    {
+        SimboloGK reg1;
+        Resultado aux1;
+        int i, j, mapeo;
+        String total;
+        String[] lNum, lDim;
+        List<Integer> coordenadas = new ArrayList();
+        List<Integer> dimensiones = new ArrayList();
+        if(!clase.varGlobales.containsKey(nodo.hijos.get(0).valor))
+        {
+            err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "No se encuentra la variable "+nodo.hijos.get(0).valor);
+            return null;
+        }
+        reg1=clase.varGlobales.get(nodo.hijos.get(0).valor);
+        if(!reg1.getRol().equalsIgnoreCase("arr"))
+        {
+            err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "La variable debe de ser arreglo");
+            return null;
+        }
+        total=this.getCadDimArray(ambito, nodo.hijos.get(1));
+        if(total.equalsIgnoreCase(""))
+        {
+            err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "No se encontro total");
+            return null;
+        }
+        lNum=total.split("_");
+        lDim=reg1.getLstDimensiones().split("_");
+        j=lNum.length;
+        i=lDim.length;
+        if(i!=j)
+        {
+            err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "Numero de dimensiones incorrecto");
+            return null;
+        }
+        for(int k=0; k<i; k++)
+        {
+            coordenadas.add(Integer.parseInt(lNum[k]));
+            dimensiones.add(Integer.parseInt(lDim[k]));
+        }
+        mapeo=this.mapeoLexicografico(coordenadas, dimensiones);
+        if(mapeo>=reg1.getTotal() || mapeo<0)
+        {
+            err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "Mapeo Lexicografico incorrecto");
+            return null;
+        }
+        aux1=this.evaluarExpresion(ambito, nodo.hijos.get(2));
+        if(aux1==null)
+        {
+            err.nuevoError("Expresion Invalida");
+            return null;
+        }
+        Resultado content = (Resultado)reg1.getValor();
+        content.setPosition(mapeo, aux1);
+        reg1.setValor(content);
+        return reg1;
+    }   
+    
+    private Resultado getArrayObj(ClaseGK clase, NodoGK nodo, String ambito)
+    {
+        SimboloGK reg1;
+        Resultado content;
+        int i, j, mapeo;
+        String dim;
+        String [] lSc, lSm;
+        List<Integer> lNi = new ArrayList();
+        List<Integer> lNm = new ArrayList();
+        if(!clase.varGlobales.containsKey(nodo.hijos.get(0).valor))
+        {
+            err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "No se encuentra la variable "+nodo.hijos.get(0).valor);
+            return null;
+        }
+        reg1=clase.varGlobales.get(nodo.hijos.get(0).valor);
+        dim=this.getCadDimArray(ambito, nodo.hijos.get(1));
+        if(dim=="")
+        {
+            err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "No se encontraron dimensiones");
+            return null;
+        }
+        lSc=dim.split("_");
+        lSm=reg1.getLstDimensiones().split("_");
+        i=lSc.length;
+        j=lSm.length;
+        if(i!=j)
+        {
+            err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "Numero de dimensiones no coinciden");
+            return null;
+        }
+        for(int k=0; k<i; k++)
+        {
+            lNi.add(Integer.parseInt(lSc[k]));
+            lNm.add(Integer.parseInt(lSm[k]));
+        }
+        mapeo = this.mapeoLexicografico(lNi, lNm);
+        if(mapeo>=reg1.getTotal() || mapeo<0)
+        {
+            err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "Mapeo lexicografico incorrecto");
+            return null;
+        }
+        Resultado aux2 = (Resultado) reg1.getValor();
+        content= aux2.getPosition(mapeo);
+        return content;
+    }
+    
+    private SimboloGK asignacionObj(String ambito, SimboloGK simGeneral, NodoGK nodo) {
+        if(!simGeneral.getTipoVariable().equals(nodo.hijos.get(1).valor))
+        {
+            return null;
+        }
+        if(existeImportacion(ambito, nodo.hijos.get(1).valor))
+        {
+            if(this.listaClases.containsKey(nodo.hijos.get(1).valor))
+            {
+                ClaseGK clase = this.listaClases.get(nodo.hijos.get(1).valor);
+                if(clase.getVisibilidad().equalsIgnoreCase("publico") || clase.getVisibilidad().equalsIgnoreCase("protegido"))
+                {
+                    try{
+                        ClaseGK asignacion;
+                        ClonarCosas clonar = new ClonarCosas();
+                        asignacion = clonar.clonarClase(clase.clone());
+                        if(asignacion==null)
+                        {
+                            err.nuevoError("No se pudo clonar la clase para la asignacion de objeto");
+                            return null;
+                        }
+                        claseActual.push(asignacion.getId());
+                        this.asignacionGlobales(asignacion.getVarGlobales(), asignacion.getNodo());
+                        claseActual.pop();
+                        if(clase.getHereda()!=null)
+                        {
+                            ClaseGK hereda;
+                            hereda = clonar.clonarClase(clase.getHereda().clone());
+                            if(hereda == null)
+                            {
+                                err.nuevoError("No se pudo clonar la clase herencia para la asignacion de objeto");
+                                return null;
+                            }
+                            claseActual.push(hereda.getId());
+                            this.asignacionGlobales(hereda.getVarGlobales(), hereda.getNodo());
+                            claseActual.pop();
+                            asignacion.setHereda(hereda);
+                        }
+                        simGeneral.setValor(asignacion);
+                        return simGeneral;
+                    }catch(CloneNotSupportedException ex)
+                    {
+                        Logger.getLogger(EjecutarGK.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    
+                }
+            }
+        }
+        return null;
+    }
+
+    private SimboloGK asigObjeto(String ambito, NodoGK nodo) {
+        SimboloGK variable;
+        variable = this.existeVariable(ambito, nodo.hijos.get(0));
+        if(variable==null)
+        {
+            err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "La variable "+ nodo.hijos.get(0).valor + "No ha sido declarada");
+            return null;
+        }
+        if(!variable.getTipoVariable().equals(nodo.hijos.get(1).valor))
+        {
+            err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "Se esta tratando de asignar diferentes tipos");
+            return null;
+        }
+        if(existeImportacion(ambito, nodo.hijos.get(1).valor))
+        {
+            if(this.listaClases.containsKey(nodo.hijos.get(1).valor))
+            {
+                ClaseGK clase = this.listaClases.get(nodo.hijos.get(1).valor);
+                if(clase.getVisibilidad().equalsIgnoreCase("publico") || clase.getVisibilidad().equalsIgnoreCase("protegido"))
+                {
+                    try{
+                        ClaseGK asignacion;
+                        ClonarCosas clonar = new ClonarCosas();
+                        asignacion = clonar.clonarClase(clase.clone());
+                        if(asignacion==null)
+                        {
+                            err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "No se pudo clonar la clase");
+                            return null;
+                        }
+                        claseActual.push(asignacion.getId());
+                        this.asignacionGlobales(asignacion.getVarGlobales(), asignacion.getNodo());
+                        claseActual.pop();
+                        if(clase.getHereda()!=null)
+                        {
+                            ClaseGK hereda;
+                            hereda = clonar.clonarClase(clase.getHereda().clone());
+                            if(hereda == null)
+                            {
+                                err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "No se pudo clonar el hereda");
+                                return null;
+                            }
+                            claseActual.push(hereda.getId());
+                            this.asignacionGlobales(hereda.getVarGlobales(), hereda.getNodo());
+                            claseActual.pop();
+                            asignacion.setHereda(hereda);
+                        }
+                        variable.setValor(asignacion);
+                        return variable;
+                    }catch(CloneNotSupportedException ex)
+                    {
+                        Logger.getLogger(EjecutarGK.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }
+        }
+        return null;
+    } 
+    
+    private void agregarObjeto(String ambito, NodoGK nodo)
+    {
+        MetodoGK metodo;
+        //metodo=this.retornarMetodo(ambito);
+        metodo = (MetodoGK) this.actual.peek();
+        if(metodo==null)
+        {
+            err.nuevoError("No se encontro el metodo");
+            return;
+        }
+        this.hacerDeclaracionObj(metodo, nodo, ambito);
+    }
+    
+    private void hacerDeclaracionObj(MetodoGK metodo, NodoGK raiz, String ambito) {
+        if (raiz != null) {
+            SimboloGK nueva_variable;
+            nueva_variable = new SimboloGK();
+            nueva_variable.setId(raiz.hijos.get(1).valor);
+            nueva_variable.setLinea(raiz.hijos.get(1).getLinea());
+            nueva_variable.setColumna(raiz.hijos.get(1).getColumna());
+            nueva_variable.setTipoVariable(raiz.hijos.get(0).valor);
+            nueva_variable.setRol("obj");
+            nueva_variable.setAmbito(ambito);
+            nueva_variable.setKey(22);
+            nueva_variable.setVisibilidad(raiz.hijos.get(2).valor);
+            if(!metodo.existeVar(nueva_variable.getId()) && !metodo.existePar(nueva_variable.getId())){
+                metodo.varLocales.put(nueva_variable.getId(), nueva_variable);
+                List<String> lista = (List<String>)this.variables.peek();
+                lista.add(nueva_variable.getId());
+            } 
+            else {
+                err.nuevoErrorSemantico(raiz.hijos.get(1).getLinea(), raiz.hijos.get(1).getColumna(), "La variable "+ nueva_variable.getId() + " ya ha sido declarada");
+                //ERROR YA EXISTE
+            }
+        }
     }
 }

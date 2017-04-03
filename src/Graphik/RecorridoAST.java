@@ -48,6 +48,7 @@ public class RecorridoAST{
     String claseActual;
     String parametros;
     TablaSimbolos tablaHK = TablaSimbolos.getInstance();
+    private Errores err = Errores.getInstance();
 
     public RecorridoAST(NodoGK raiz) {
         this.raiz = raiz;
@@ -72,7 +73,6 @@ public class RecorridoAST{
         String path;
         if (n != null) {
             if (n.hijos.size() > 0) {
-                imports = new ArrayList();
                 for (NodoGK t : n.hijos) {
                     if (this.rutaOficial != null) {
                         aux = t.valor;
@@ -146,6 +146,7 @@ public class RecorridoAST{
                 clase.setLlamadasHK(llamadasHK);
                 clase.setImports((List<String>)stackImports.peek());
                 stackImports.pop();
+                imports = new ArrayList();
                 pasada1("", nodo.hijos.get(2));
                 RecorridoAST.listaClases.put(clase.getId(), clase);
                 contador++;
@@ -171,6 +172,7 @@ public class RecorridoAST{
                 }
                 else
                 {
+                    err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "La clase "+nodo.hijos.get(0).valor + "Tiene que agregar el import para la herencia de la clase");
                     //ERROR TIENE QUE AGREGAR EL IMPORT PARA LA HERENCIA DE LA CLASE
                 }
                 contador++;
@@ -189,6 +191,7 @@ public class RecorridoAST{
                     }
                     else
                     {
+                        err.nuevoErrorSemantico(t.linea, t.columna, "No existe la llamadaHK "+t.valor);
                         //ERROR NO EXISTE;
                     }
                 }
@@ -237,6 +240,7 @@ public class RecorridoAST{
                         nuevoMetodo.setId(nombre);
                         clase.metodos.put(nombre, nuevoMetodo);
                     } else {
+                        err.nuevoErrorSemantico(nodo.hijos.get(0).getLinea(),nodo.hijos.get(0).getColumna(), "El metodo "+ nodo.hijos.get(0).valor +" ya fue declarado" );
                         //ERROR YA EXISTE
                     }
                 } else if (nodo.valor.equals("FUNCION")) {
@@ -263,6 +267,7 @@ public class RecorridoAST{
                         nuevoMetodo.setId(nombre);
                         clase.metodos.put(nombre, nuevoMetodo);
                     } else {
+                        err.nuevoErrorSemantico(nodo.hijos.get(1).getLinea(),nodo.hijos.get(1).getColumna(), "La funcion "+ nodo.hijos.get(1).valor +" ya fue declarado" );
                         //ERROR YA EXISTE
                     }
                 } else if (nodo.valor.equals("MAIN")) {
@@ -297,6 +302,7 @@ public class RecorridoAST{
                     if (!clase.existeMet(nombre)) {
                         clase.metodos.put("Datos", nuevoMetodo);
                     } else {
+                        err.nuevoError("Ya existe un main");
                         //ERROR YA EXISTE
                     }
                     
@@ -324,7 +330,7 @@ public class RecorridoAST{
         SimboloGK nueva_variable;
         for (NodoGK n : nodo.hijos) {
             contParametros++;
-            if (n.hijos.get(0).valor.equals("entero")) {
+            if (n.hijos.get(0).valor.equalsIgnoreCase("entero")) {
                 parametros += "_entero";
                 nueva_variable = new SimboloGK("entero", n.hijos.get(1).valor, 0, ambito_variable, 0);
                 nueva_variable.setOrden(contParametros);
@@ -334,9 +340,10 @@ public class RecorridoAST{
                 if (!nuevoMetodo.existePar(nueva_variable.getId())) {
                     nuevoMetodo.parametros.put(nueva_variable.getId(), nueva_variable);
                 } else {
+                    err.nuevoErrorSemantico(nodo.hijos.get(1).getLinea(),nodo.hijos.get(1).getColumna(), "La variable "+ nodo.hijos.get(0).valor +" ya fue declarada" );
                     //ERROR YA EXISTE
                 }
-            } else if (n.hijos.get(0).valor.equals("cadena")) {
+            } else if (n.hijos.get(0).valor.equalsIgnoreCase("cadena")) {
                 parametros += "_cadena";
                 nueva_variable = new SimboloGK("cadena", n.hijos.get(1).valor, "", ambito_variable, 0);
                 nueva_variable.setOrden(contParametros);
@@ -346,9 +353,10 @@ public class RecorridoAST{
                 if (!nuevoMetodo.existePar(nueva_variable.getId())) {
                     nuevoMetodo.parametros.put(nueva_variable.getId(), nueva_variable);
                 } else {
+                    err.nuevoErrorSemantico(nodo.hijos.get(1).getLinea(),nodo.hijos.get(1).getColumna(), "La variable "+ nodo.hijos.get(0).valor +" ya fue declarada" );
                     //ERROR YA EXISTE
                 }
-            } else if (n.hijos.get(0).valor.equals("caracter")) {
+            } else if (n.hijos.get(0).valor.equalsIgnoreCase("caracter")) {
                 parametros += "_caracter";
                 nueva_variable = new SimboloGK("caracter", n.hijos.get(1).valor, (char) 32, ambito_variable, 0);
                 nueva_variable.setOrden(contParametros);
@@ -358,9 +366,10 @@ public class RecorridoAST{
                 if (!nuevoMetodo.existePar(nueva_variable.getId())) {
                     nuevoMetodo.parametros.put(nueva_variable.getId(), nueva_variable);
                 } else {
+                    err.nuevoErrorSemantico(nodo.hijos.get(1).getLinea(),nodo.hijos.get(1).getColumna(), "La variable "+ nodo.hijos.get(0).valor +" ya fue declarada" );
                     //ERROR YA EXISTE
                 }
-            } else if (n.hijos.get(0).valor.equals("decimal")) {
+            } else if (n.hijos.get(0).valor.equalsIgnoreCase("decimal")) {
                 parametros += "_decimal";
                 nueva_variable = new SimboloGK("decimal", n.hijos.get(1).valor, 0.00, ambito_variable, 0);
                 nueva_variable.setOrden(contParametros);
@@ -370,9 +379,10 @@ public class RecorridoAST{
                 if (!nuevoMetodo.existePar(nueva_variable.getId())) {
                     nuevoMetodo.parametros.put(nueva_variable.getId(), nueva_variable);
                 } else {
+                    err.nuevoErrorSemantico(nodo.hijos.get(1).getLinea(),nodo.hijos.get(1).getColumna(), "La variable "+ nodo.hijos.get(0).valor +" ya fue declarada" );
                     //ERROR YA EXISTE
                 }
-            } else if (n.hijos.get(0).valor.equals("bool")) {
+            } else if (n.hijos.get(0).valor.equalsIgnoreCase("bool")) {
                 parametros += "_bool";
                 nueva_variable = new SimboloGK("bool", n.hijos.get(1).valor, false, ambito_variable, 0);
                 nueva_variable.setOrden(contParametros);
@@ -382,6 +392,7 @@ public class RecorridoAST{
                 if (!nuevoMetodo.existePar(nueva_variable.getId())) {
                     nuevoMetodo.parametros.put(nueva_variable.getId(), nueva_variable);
                 } else {
+                    err.nuevoErrorSemantico(nodo.hijos.get(1).getLinea(),nodo.hijos.get(1).getColumna(), "La variable "+ nodo.hijos.get(0).valor +" ya fue declarada" );
                     //ERROR YA EXISTE
                 }
             } else {
@@ -394,6 +405,7 @@ public class RecorridoAST{
                 if (!nuevoMetodo.existePar(nueva_variable.getId())) {
                     nuevoMetodo.parametros.put(nueva_variable.getId(), nueva_variable);
                 } else {
+                    err.nuevoErrorSemantico(nodo.hijos.get(1).getLinea(),nodo.hijos.get(1).getColumna(), "La variable "+ nodo.hijos.get(0).valor +" ya fue declarada" );
                     //ERROR YA EXISTE
                 }
             }
@@ -423,6 +435,7 @@ public class RecorridoAST{
                             }
                             else
                             {
+                                err.nuevoErrorSemantico(linea.get(contador),columna.get(contador), "La variable "+ nueva_variable.getId() +" ya fue declarada" );
                             }
                         } else {
                             nueva_variable.setAmbito("global");
@@ -432,7 +445,7 @@ public class RecorridoAST{
                             }
                             else
                             {
-                            
+                                err.nuevoErrorSemantico(linea.get(contador),columna.get(contador), "La variable "+ nueva_variable.getId() +" ya fue declarada" );
                             }
                         }
                         break;
@@ -446,6 +459,7 @@ public class RecorridoAST{
                             if(!nuevoMetodo.existeVar(nueva_variable.getId()) && !nuevoMetodo.existePar(nueva_variable.getId())){
                                 nuevoMetodo.varLocales.put(nueva_variable.getId(), nueva_variable);
                             } else {
+                                err.nuevoErrorSemantico(linea.get(contador),columna.get(contador), "La variable "+ nueva_variable.getId() +" ya fue declarada" );
                                 //ERROR YA EXISTE
                             }
                         } else {
@@ -453,6 +467,7 @@ public class RecorridoAST{
                             if (!clase.existeVar(nueva_variable.getId())) {
                                 clase.varGlobales.put(nueva_variable.getId(), nueva_variable);
                             } else {
+                                err.nuevoErrorSemantico(linea.get(contador),columna.get(contador), "La variable "+ nueva_variable.getId() +" ya fue declarada" );
                                 //ERROR YA EXISTE
                             }
                         }
@@ -467,6 +482,7 @@ public class RecorridoAST{
                             if(!nuevoMetodo.existeVar(nueva_variable.getId()) && !nuevoMetodo.existePar(nueva_variable.getId())){
                                 nuevoMetodo.varLocales.put(nueva_variable.getId(), nueva_variable);
                             } else {
+                                err.nuevoErrorSemantico(linea.get(contador),columna.get(contador), "La variable "+ nueva_variable.getId() +" ya fue declarada" );
                                 //ERROR YA EXISTE
                             }
                         } else {
@@ -474,6 +490,7 @@ public class RecorridoAST{
                             if (!clase.existeVar(nueva_variable.getId())) {
                                 clase.varGlobales.put(nueva_variable.getId(), nueva_variable);
                             } else {
+                                err.nuevoErrorSemantico(linea.get(contador),columna.get(contador), "La variable "+ nueva_variable.getId() +" ya fue declarada" );
                                 //ERROR YA EXISTE
                             }
                         }
@@ -488,6 +505,7 @@ public class RecorridoAST{
                             if(!nuevoMetodo.existeVar(nueva_variable.getId()) && !nuevoMetodo.existePar(nueva_variable.getId())){
                                 nuevoMetodo.varLocales.put(nueva_variable.getId(), nueva_variable);
                             } else {
+                                err.nuevoErrorSemantico(linea.get(contador),columna.get(contador), "La variable "+ nueva_variable.getId() +" ya fue declarada" );
                                 //ERROR YA EXISTE
                             }
                         } else {
@@ -495,6 +513,7 @@ public class RecorridoAST{
                             if (!clase.existeVar(nueva_variable.getId())) {
                                 clase.varGlobales.put(nueva_variable.getId(), nueva_variable);
                             } else {
+                                err.nuevoErrorSemantico(linea.get(contador),columna.get(contador), "La variable "+ nueva_variable.getId() +" ya fue declarada" );
                                 //ERROR YA EXISTE
                             }
                         }
@@ -509,6 +528,7 @@ public class RecorridoAST{
                             if(!nuevoMetodo.existeVar(nueva_variable.getId()) && !nuevoMetodo.existePar(nueva_variable.getId())){
                                 nuevoMetodo.varLocales.put(nueva_variable.getId(), nueva_variable);
                             } else {
+                                err.nuevoErrorSemantico(linea.get(contador),columna.get(contador), "La variable "+ nueva_variable.getId() +" ya fue declarada" );
                                 //ERROR YA EXISTE
                             }
                         } else {
@@ -516,6 +536,7 @@ public class RecorridoAST{
                             if (!clase.existeVar(nueva_variable.getId())) {
                                 clase.varGlobales.put(nueva_variable.getId(), nueva_variable);
                             } else {
+                                err.nuevoErrorSemantico(linea.get(contador),columna.get(contador), "La variable "+ nueva_variable.getId() +" ya fue declarada" );
                                 //ERROR YA EXISTE
                             }
                         }
@@ -530,6 +551,7 @@ public class RecorridoAST{
                             if(!nuevoMetodo.existeVar(nueva_variable.getId()) && !nuevoMetodo.existePar(nueva_variable.getId())){
                                 nuevoMetodo.varLocales.put(nueva_variable.getId(), nueva_variable);
                             } else {
+                                err.nuevoErrorSemantico(linea.get(contador),columna.get(contador), "La variable "+ nueva_variable.getId() +" ya fue declarada" );
                                 //ERROR YA EXISTE
                             }
                         } else {
@@ -537,6 +559,7 @@ public class RecorridoAST{
                             if (!clase.existeVar(nueva_variable.getId())) {
                                 clase.varGlobales.put(nueva_variable.getId(), nueva_variable);
                             } else {
+                                err.nuevoErrorSemantico(linea.get(contador),columna.get(contador), "La variable "+ nueva_variable.getId() +" ya fue declarada" );
                                 //ERROR YA EXISTE
                             }
                         }
@@ -561,6 +584,7 @@ public class RecorridoAST{
                         if(!nuevoMetodo.existeVar(nueva_variable.getId()) && !nuevoMetodo.existePar(nueva_variable.getId())){
                             nuevoMetodo.varLocales.put(nueva_variable.getId(), nueva_variable);
                         } else {
+                            err.nuevoErrorSemantico(raiz.hijos.get(1).getLinea(),raiz.hijos.get(1).getColumna(), "La variable "+ nueva_variable.getId() +" ya fue declarada" );
                             //ERROR YA EXISTE
                         }
                     } else {
@@ -568,6 +592,7 @@ public class RecorridoAST{
                         if (!clase.existeVar(nueva_variable.getId())) {
                             clase.varGlobales.put(nueva_variable.getId(), nueva_variable);
                         } else {
+                            err.nuevoErrorSemantico(raiz.hijos.get(1).getLinea(),raiz.hijos.get(1).getColumna(), "La variable "+ nueva_variable.getId() +" ya fue declarada" );
                             //ERROR YA EXISTE
                         }
                     }
@@ -582,6 +607,7 @@ public class RecorridoAST{
                         if(!nuevoMetodo.existeVar(nueva_variable.getId()) && !nuevoMetodo.existePar(nueva_variable.getId())){
                             nuevoMetodo.varLocales.put(nueva_variable.getId(), nueva_variable);
                         } else {
+                            err.nuevoErrorSemantico(raiz.hijos.get(1).getLinea(),raiz.hijos.get(1).getColumna(), "La variable "+ nueva_variable.getId() +" ya fue declarada" );
                             //ERROR YA EXISTE
                         }
                     } else {
@@ -589,6 +615,7 @@ public class RecorridoAST{
                         if (!clase.existeVar(nueva_variable.getId())) {
                             clase.varGlobales.put(nueva_variable.getId(), nueva_variable);
                         } else {
+                            err.nuevoErrorSemantico(raiz.hijos.get(1).getLinea(),raiz.hijos.get(1).getColumna(), "La variable "+ nueva_variable.getId() +" ya fue declarada" );
                             //ERROR YA EXISTE
                         }
                     }
@@ -601,6 +628,7 @@ public class RecorridoAST{
                         if(!nuevoMetodo.existeVar(nueva_variable.getId()) && !nuevoMetodo.existePar(nueva_variable.getId())){
                             nuevoMetodo.varLocales.put(nueva_variable.getId(), nueva_variable);
                         } else {
+                            err.nuevoErrorSemantico(raiz.hijos.get(1).getLinea(),raiz.hijos.get(1).getColumna(), "La variable "+ nueva_variable.getId() +" ya fue declarada" );
                             //ERROR YA EXISTE
                         }
                     } else {
@@ -608,6 +636,7 @@ public class RecorridoAST{
                         if (!clase.existeVar(nueva_variable.getId())) {
                             clase.varGlobales.put(nueva_variable.getId(), nueva_variable);
                         } else {
+                            err.nuevoErrorSemantico(raiz.hijos.get(1).getLinea(),raiz.hijos.get(1).getColumna(), "La variable "+ nueva_variable.getId() +" ya fue declarada" );
                             //ERROR YA EXISTE
                         }
                     }
@@ -620,6 +649,7 @@ public class RecorridoAST{
                         if(!nuevoMetodo.existeVar(nueva_variable.getId()) && !nuevoMetodo.existePar(nueva_variable.getId())){
                             nuevoMetodo.varLocales.put(nueva_variable.getId(), nueva_variable);
                         } else {
+                            err.nuevoErrorSemantico(raiz.hijos.get(1).getLinea(),raiz.hijos.get(1).getColumna(), "La variable "+ nueva_variable.getId() +" ya fue declarada" );
                             //ERROR YA EXISTE
                         }
                     } else {
@@ -627,6 +657,7 @@ public class RecorridoAST{
                         if (!clase.existeVar(nueva_variable.getId())) {
                             clase.varGlobales.put(nueva_variable.getId(), nueva_variable);
                         } else {
+                            err.nuevoErrorSemantico(raiz.hijos.get(1).getLinea(),raiz.hijos.get(1).getColumna(), "La variable "+ nueva_variable.getId() +" ya fue declarada" );
                             //ERROR YA EXISTE
                         }
                     }
@@ -639,6 +670,7 @@ public class RecorridoAST{
                         if(!nuevoMetodo.existeVar(nueva_variable.getId()) && !nuevoMetodo.existePar(nueva_variable.getId())){
                             nuevoMetodo.varLocales.put(nueva_variable.getId(), nueva_variable);
                         } else {
+                            err.nuevoErrorSemantico(raiz.hijos.get(1).getLinea(),raiz.hijos.get(1).getColumna(), "La variable "+ nueva_variable.getId() +" ya fue declarada" );
                             //ERROR YA EXISTE
                         }
                     } else {
@@ -646,6 +678,7 @@ public class RecorridoAST{
                         if (!clase.existeVar(nueva_variable.getId())) {
                             clase.varGlobales.put(nueva_variable.getId(), nueva_variable);
                         } else {
+                            err.nuevoErrorSemantico(raiz.hijos.get(1).getLinea(),raiz.hijos.get(1).getColumna(), "La variable "+ nueva_variable.getId() +" ya fue declarada" );
                             //ERROR YA EXISTE
                         }
                     }
@@ -660,6 +693,7 @@ public class RecorridoAST{
                         if(!nuevoMetodo.existeVar(nueva_variable.getId()) && !nuevoMetodo.existePar(nueva_variable.getId())){
                             nuevoMetodo.varLocales.put(nueva_variable.getId(), nueva_variable);
                         } else {
+                            err.nuevoErrorSemantico(raiz.hijos.get(1).getLinea(),raiz.hijos.get(1).getColumna(), "La variable "+ nueva_variable.getId() +" ya fue declarada" );
                             //ERROR YA EXISTE
                         }
                     } else {
@@ -667,6 +701,7 @@ public class RecorridoAST{
                         if (!clase.existeVar(nueva_variable.getId())) {
                             clase.varGlobales.put(nueva_variable.getId(), nueva_variable);
                         } else {
+                            err.nuevoErrorSemantico(raiz.hijos.get(1).getLinea(),raiz.hijos.get(1).getColumna(), "La variable "+ nueva_variable.getId() +" ya fue declarada" );
                             //ERROR YA EXISTE
                         }
                     }
@@ -694,6 +729,7 @@ public class RecorridoAST{
                 if(!nuevoMetodo.existeVar(nueva_variable.getId()) && !nuevoMetodo.existePar(nueva_variable.getId())){
                     nuevoMetodo.varLocales.put(nueva_variable.getId(), nueva_variable);
                 } else {
+                    err.nuevoErrorSemantico(raiz.hijos.get(1).getLinea(),raiz.hijos.get(1).getColumna(), "La variable "+ nueva_variable.getId() +" ya fue declarada" );
                     //ERROR YA EXISTE
                 }
             } else {
@@ -701,6 +737,7 @@ public class RecorridoAST{
                 if (!clase.existeVar(nueva_variable.getId())) {
                     clase.varGlobales.put(nueva_variable.getId(), nueva_variable);
                 } else {
+                    err.nuevoErrorSemantico(raiz.hijos.get(1).getLinea(),raiz.hijos.get(1).getColumna(), "La variable "+ nueva_variable.getId() +" ya fue declarada" );
                     //ERROR YA EXISTE
                 }
             }
@@ -722,6 +759,7 @@ public class RecorridoAST{
                 if(!nuevoMetodo.existeVar(nueva_variable.getId()) && !nuevoMetodo.existePar(nueva_variable.getId())){
                     nuevoMetodo.varLocales.put(nueva_variable.getId(), nueva_variable);
                 } else {
+                    err.nuevoErrorSemantico(raiz.hijos.get(1).getLinea(),raiz.hijos.get(1).getColumna(), "La variable "+ nueva_variable.getId() +" ya fue declarada" );
                     //ERROR YA EXISTE
                 }
             } else {
@@ -729,6 +767,7 @@ public class RecorridoAST{
                 if (!clase.existeVar(nueva_variable.getId())) {
                     clase.varGlobales.put(nueva_variable.getId(), nueva_variable);
                 } else {
+                    err.nuevoErrorSemantico(raiz.hijos.get(1).getLinea(),raiz.hijos.get(1).getColumna(), "La variable "+ nueva_variable.getId() +" ya fue declarada" );
                     //ERROR YA EXISTE
                 }
             }

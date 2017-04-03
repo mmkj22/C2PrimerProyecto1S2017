@@ -384,6 +384,13 @@ ASIGNACION ::= identificador:id igual EXPRESION:expr
                         nodo.hijos.add(acc);
                         nodo.hijos.add(exp);
                         RESULT = nodo;
+                    :}
+              |ACCESOBJ:acc igual tkn_nuevo identificador:id2 par_izq par_der
+                    {:
+                        NodoGK nodo = new NodoGK("ACCESOBJ_INSTANCIA");
+                        nodo.hijos.add(acc);
+                        nodo.hijos.add(new NodoGK(id2, id2left, id2right));
+                        RESULT = nodo;
                     :};
 
 LST_VARIABLES ::= LST_VARIABLES:nodo coma VAR:vars
@@ -632,7 +639,14 @@ NIVEL ::= punto identificador:id
                 NodoGK nodo = new NodoGK(id, idleft, idright);
                 RESULT = nodo;
             :}
-         |punto ACCESO_MET:nodo {: RESULT = nodo; :};
+         |punto ACCESO_MET:nodo {: RESULT = nodo; :}
+         |punto identificador:id LST_DIM:dims
+                {:
+                    NodoGK nodo = new NodoGK("AccesoArreglo");
+                    nodo.hijos.add(new NodoGK(id, idleft, idright));
+                    nodo.hijos.add(dims);
+                    RESULT = nodo;
+                :};
 
 GRAFICAR ::= tkn_graphikar par_izq EXPRESION:expr1 coma EXPRESION:expr2 par_der int_der
                 {:
