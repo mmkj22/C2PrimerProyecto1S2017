@@ -1023,4 +1023,3 @@ LST_DARR ::= LST_DARR:nodo coma EXPRESION:dims
                     RESULT = nodo;
                 
                 :};
-

@@ -7,11 +7,13 @@ package Haskell;
 
 import Errores.Errores;
 import Errores.NError;
+import GUI.GraficarTreeHaskell;
 import java.util.Calendar;
 import java.util.Enumeration;
 import java.util.GregorianCalendar;
 import java.util.List;
 import javax.swing.JOptionPane;
+import javax.swing.tree.DefaultMutableTreeNode;
 
 /**
  *
@@ -22,10 +24,11 @@ public class RecorridoHK {
     TablaSimbolos tabla;
     GregorianCalendar gcalendar = new GregorianCalendar();
     private Errores err = Errores.getInstance();
+    DefaultMutableTreeNode temp;
     
     public RecorridoHK()
     {
-    
+        GraficarTreeHaskell.dynamicTree2 = new Logica.DynamicTree();
     }
     
     public RecorridoHK(NodoHK root)
@@ -62,6 +65,8 @@ public class RecorridoHK {
     void addProc( String nombreReg, String tipo, String rol, String ambito, String dimension,
                   String parametros, int globaLocal, int retorna, NodoHK n, Value val, NodoHK body, NodoHK valRetorno)
     {
+        temp = new DefaultMutableTreeNode(nombreReg);
+        GraficarTreeHaskell.dynamicTree2.addObject(null,nombreReg);
         if(!n.hijos.get(1).valor.equals("sinparametros"))
         {
             dimension=this.listaParametros(nombreReg, n.hijos.get(1),2);
@@ -89,6 +94,7 @@ public class RecorridoHK {
             else
             {
                 nombre=c.valor;
+                GraficarTreeHaskell.dynamicTree2.addObject(temp, nombre);
                 if(!this.tabla.existe(ambito+"_"+nombre))
                 {
                     this.addReg(ambito+"_"+nombre,"", "param", ambito, "","",0,-1,null,null,null);
@@ -179,6 +185,7 @@ public class RecorridoHK {
                     {
                         addProc(nombreReg, tipo, rol, ambito, "", lDim, locGlob, 1, n, null, x, null);
                     }
+                    
                 }
                 else if(n.valor.equals("SINO"))
                 {

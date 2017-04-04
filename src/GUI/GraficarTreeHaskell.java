@@ -11,7 +11,7 @@ package GUI;
  */
 public class GraficarTreeHaskell extends javax.swing.JFrame {
 
-    public Logica.DynamicTree dynamicTree2;
+    public static Logica.DynamicTree dynamicTree2 = new Logica.DynamicTree();
     /**
      * Creates new form GraficarTreeHaskell
      */
@@ -95,7 +95,6 @@ public class GraficarTreeHaskell extends javax.swing.JFrame {
     // End of variables declaration//GEN-END:variables
 
     private void masComponentes() {
-        dynamicTree2 = new Logica.DynamicTree();
         splitpane.setRightComponent(dynamicTree2);
     }
         
