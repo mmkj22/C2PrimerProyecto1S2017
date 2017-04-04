@@ -40,7 +40,8 @@ public class RecorridoAST{
     List<String> lista_vis;
     List<Integer> linea;
     List<Integer> columna;
-    List<String> imports;
+    List<String> imports = new ArrayList();
+    List<String> auxiliar;
     Stack stackImports = new Stack();
     int contParametros = 0;
     ClaseGK clase;
@@ -64,7 +65,7 @@ public class RecorridoAST{
         if (raiz != null) {
             this.listaImports(raiz.hijos.get(0), name);
             this.llamadasHK(raiz.hijos.get(1), name);
-            this.listaClase(raiz.hijos.get(2), name);
+            this.listaClase(raiz.hijos.get(2));
         }
     }
 
@@ -83,13 +84,18 @@ public class RecorridoAST{
                         if (f.exists()) {
                             System.out.println("Se encontro el archivo");
                             this.parsearExt(path, aux);
-                            imports.add(t.valor.replace(".gk", ""));
+                            //imports.add(t.valor.replace(".gk", ""));
                         } else {
                             JOptionPane.showMessageDialog(null, "El Archivo " + aux + " no se encuentra en la carpeta", "Imports", JOptionPane.INFORMATION_MESSAGE);
                         }
                     } else {
                         JOptionPane.showMessageDialog(null, "Guarde el archivo antes de compilarlo debido a que no se encuentra una ruta para buscar los Imports", "Imports", JOptionPane.INFORMATION_MESSAGE);
                     }
+                }
+                for(NodoGK a: n.hijos)
+                {
+                    imports.add(a.valor.replace(".gk", ""));
+                    
                 }
                 stackImports.push(imports);
             }
@@ -112,7 +118,7 @@ public class RecorridoAST{
                     root=pars.nodo;
                     this.listaImports(root.hijos.get(0), nombre);
                     this.llamadasHK(root.hijos.get(1), nombre);
-                    this.listaClase(root.hijos.get(2), nombre);
+                    this.listaClase(root.hijos.get(2));
                 }
                 else
                 {
@@ -131,7 +137,7 @@ public class RecorridoAST{
         }
     }
 
-    private void listaClase(NodoGK n, String nombre) throws CloneNotSupportedException {
+    private void listaClase(NodoGK n) throws CloneNotSupportedException {
         int contador = 0;
         for (NodoGK nodo : n.hijos) {
             if(nodo.hijos.size()==3)
@@ -144,12 +150,14 @@ public class RecorridoAST{
                 claseActual = nodo.hijos.get(0).valor;
                 clase.setNodo(nodo.hijos.get(2));
                 clase.setLlamadasHK(llamadasHK);
-                clase.setImports((List<String>)stackImports.peek());
-                stackImports.pop();
+                if(stackImports.size()>0){
+                    clase.setImports((List<String>)stackImports.peek());
+                    stackImports.pop();
+                }
                 imports = new ArrayList();
                 pasada1("", nodo.hijos.get(2));
                 RecorridoAST.listaClases.put(clase.getId(), clase);
-                contador++;
+                contador=contador+1;
             }
             else
             {
@@ -165,8 +173,10 @@ public class RecorridoAST{
                     clase.setHereda(listaClases.get(nodo.hijos.get(1).valor).clone());
                     clase.getHereda().setId(nodo.hijos.get(0).valor);
                     clase.setLlamadasHK(llamadasHK);
-                    clase.setImports((List<String>)stackImports.peek());
-                    stackImports.pop();
+                    if(stackImports.size()>0){
+                        clase.setImports((List<String>)stackImports.peek());
+                        stackImports.pop();
+                    }
                     pasada1("",nodo.hijos.get(3));
                     RecorridoAST.listaClases.put(clase.getId(), clase);
                 }
@@ -175,7 +185,7 @@ public class RecorridoAST{
                     err.nuevoErrorSemantico(nodo.hijos.get(0).linea, nodo.hijos.get(0).columna, "La clase "+nodo.hijos.get(0).valor + "Tiene que agregar el import para la herencia de la clase");
                     //ERROR TIENE QUE AGREGAR EL IMPORT PARA LA HERENCIA DE LA CLASE
                 }
-                contador++;
+                contador=contador+1;
             }
         }
     }

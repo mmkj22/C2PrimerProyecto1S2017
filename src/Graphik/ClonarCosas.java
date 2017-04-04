@@ -30,7 +30,7 @@ public class ClonarCosas {
         Iterator it = clase.varGlobales.keySet().iterator();
         while(it.hasNext()){
             String key = (String)it.next();
-            System.out.println("Esto trae la key: "+key);
+            //System.out.println("Esto trae la key: "+key);
             try {
                 SimboloGK simGeneral = clase.varGlobales.get(key).clone();
                 Resultado res = reiniciarResultado(simGeneral);
@@ -47,7 +47,7 @@ public class ClonarCosas {
         it = clase.metodos.keySet().iterator();
         while(it.hasNext()){
             String key = (String)it.next();
-            System.out.println("Esto trae la key: "+key);
+            //System.out.println("Esto trae la key: "+key);
             try {
                 MetodoGK metGeneral = clase.metodos.get(key).clone();
                 //CLONAR LOS PARAMETROS DEL METODO-----------------------------------------------------------------------------------------------------------
@@ -166,7 +166,7 @@ public class ClonarCosas {
         Iterator it = lstparametros.keySet().iterator();
         while(it.hasNext()){
             String key = (String)it.next();
-            System.out.println("Esto trae la key: "+key);
+            //System.out.println("Esto trae la key: "+key);
             try {
                 SimboloGK simGeneral = lstparametros.get(key).clone();
                 Resultado res = reiniciarResultado(simGeneral);
@@ -185,7 +185,7 @@ public class ClonarCosas {
         Iterator it = locales.keySet().iterator();
         while(it.hasNext()){
             String key = (String)it.next();
-            System.out.println("Esto trae la key: "+key);
+            //System.out.println("Esto trae la key: "+key);
             try {
                 SimboloGK simGeneral = locales.get(key).clone();
                 Resultado res = reiniciarResultado(simGeneral);
@@ -204,7 +204,7 @@ public class ClonarCosas {
         Iterator it = lstparametros.keySet().iterator();
         while(it.hasNext()){
             String key = (String)it.next();
-            System.out.println("Esto trae la key: "+key);
+            //System.out.println("Esto trae la key: "+key);
             try {
                 SimboloGK simGeneral = lstparametros.get(key).clone();
                 Resultado res = reiniciarResultadoCompleto(simGeneral);
@@ -223,7 +223,7 @@ public class ClonarCosas {
         Iterator it = locales.keySet().iterator();
         while(it.hasNext()){
             String key = (String)it.next();
-            System.out.println("Esto trae la key: "+key);
+            //System.out.println("Esto trae la key: "+key);
             try {
                 SimboloGK simGeneral = locales.get(key).clone();
                 Resultado res = reiniciarResultadoCompleto(simGeneral);
@@ -258,7 +258,7 @@ public class ClonarCosas {
         {
             case "entero":
                 tipo = var.getValor().getClass().getSimpleName();
-                if(tipo.equalsIgnoreCase("Integer"))
+                if(tipo.equalsIgnoreCase("Integer") || tipo.equalsIgnoreCase("Object"))
                 {
                     content = new Resultado(var.getTipoVariable(), var.getValor());
                     return content;
@@ -275,7 +275,7 @@ public class ClonarCosas {
                 }
             case "decimal":
                 tipo = var.getValor().getClass().getSimpleName();
-                if(tipo.equalsIgnoreCase("Double"))
+                if(tipo.equalsIgnoreCase("Double") || tipo.equalsIgnoreCase("Object"))
                 {
                     content = new Resultado(var.getTipoVariable(), var.getValor());
                     return content;
@@ -293,7 +293,7 @@ public class ClonarCosas {
                 
             case "bool":
                 tipo = var.getValor().getClass().getSimpleName();
-                if(tipo.equalsIgnoreCase("Boolean"))
+                if(tipo.equalsIgnoreCase("Boolean") || tipo.equalsIgnoreCase("Object"))
                 {
                     content = new Resultado(var.getTipoVariable(), var.getValor());
                     return content; 
@@ -311,7 +311,7 @@ public class ClonarCosas {
                 }
             case "cadena":
                 tipo = var.getValor().getClass().getSimpleName();
-                if(tipo.equalsIgnoreCase("String"))
+                if(tipo.equalsIgnoreCase("String") || tipo.equalsIgnoreCase("Object"))
                 {
                     content = new Resultado(var.getTipoVariable(), var.getValor());
                     return content; 
@@ -329,7 +329,7 @@ public class ClonarCosas {
                 
             case "caracter":
                 tipo = var.getValor().getClass().getSimpleName();
-                if(tipo.equalsIgnoreCase("Character"))
+                if(tipo.equalsIgnoreCase("Character")|| tipo.equalsIgnoreCase("Object"))
                 {
                     content = new Resultado(var.getTipoVariable(), var.getValor());
                     return content; 
@@ -381,7 +381,7 @@ public class ClonarCosas {
         Iterator it = clase.varGlobales.keySet().iterator();
         while(it.hasNext()){
             String key = (String)it.next();
-            System.out.println("Esto trae la key: "+key);
+            //System.out.println("Esto trae la key: "+key);
             try {
                 SimboloGK simGeneral = clase.varGlobales.get(key).clone();
                 Resultado res = reiniciarResultadoCompleto(simGeneral);
@@ -398,7 +398,7 @@ public class ClonarCosas {
         it = clase.metodos.keySet().iterator();
         while(it.hasNext()){
             String key = (String)it.next();
-            System.out.println("Esto trae la key: "+key);
+            //System.out.println("Esto trae la key: "+key);
             try {
                 MetodoGK metGeneral = clase.metodos.get(key).clone();
                 //CLONAR LOS PARAMETROS DEL METODO-----------------------------------------------------------------------------------------------------------
